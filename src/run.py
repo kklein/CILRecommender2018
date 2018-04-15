@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import time
 
 # Rows are users
 USER_COUNT = 10000
@@ -91,22 +92,28 @@ def predict_by_sgd(data, approximation_rank):
     z = np.random.rand(data.shape[1], approximation_rank) * 4 + 1
 
     n_epochs = 5
-    n_samples = int(0.01 * len(observed_indices))
+    n_samples = int(0.001 * len(observed_indices))
+    n_samples = 1000
     alpha = 0.05
     prev_loss = sys.maxsize
     for i in range(n_epochs):
         print("Epoch {0}:".format(i))
     # TODO: fix factor Z, perform SGD on U
+        start = time.time()
         for j in range(n_samples):
 
-            index = np.random.choice(range(len(observed_indices)))
+            
+            index = np.random.randint(0, len(observed_indices) - 1)
             index = observed_indices[index]
+            
             u[index[0],:] -= alpha * (data[index[0], index[1]] - np.dot(u[index[0], :], z[index[1], :])) * z[index[1], :] 
-
-
+            
+            
+        end = time.time()
+        print("One Batch of Gradient Updates took {0} s: ".format(end - start))
     # TODO: fix factor U, perform SGD on Z
         for j in range(n_samples):
-            index = np.random.choice(range(len(observed_indices)))
+            index = np.random.randint(0, len(observed_indices) - 1)
             index = observed_indices[index]
             z[index[1],:] -= alpha * (data[index[0], index[1]] - np.dot(u[index[0], :], z[index[1], :])) * u[index[0], :] 
 
@@ -116,7 +123,7 @@ def predict_by_sgd(data, approximation_rank):
         prod[data == 0] = 0
         diff = data - prod
         square = np.multiply(diff, diff)
-        loss = np.matrix.sum(square)
+        loss = np.sum(square)
         print("Loss {0}".format(loss))
         if (prev_loss - loss) / loss < epsilon:
             break
