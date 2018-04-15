@@ -1,5 +1,5 @@
-import numpy as np
 import sys
+import numpy as np
 
 # Rows are users
 USER_COUNT = 10000
@@ -7,6 +7,8 @@ USER_COUNT = 10000
 ITEM_COUNT = 1000
 SUBMISSION_FILE = '../data/submission_sgd.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
+N_EPOCHS = 5
+LEARNING_RATE = 0.05
 
 def load_ratings(data_file):
     """Loads the rating data from the specified file.
@@ -81,37 +83,26 @@ def predict_by_svd(data, approximation_rank):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 def predict_by_sgd(data, approximation_rank):
-
     row_indices, col_indices = np.where(data != 0)
     observed_indices = list(zip(row_indices, col_indices))
-
-    # TODO: initialize factors U and Z
-
     u = np.random.rand(data.shape[0], approximation_rank) * 4 + 1
     z = np.random.rand(data.shape[1], approximation_rank) * 4 + 1
 
-    n_epochs = 5
-    n_samples = int(0.01 * len(observed_indices))
-    alpha = 0.05
+    n_samples = int(0.001 * len(observed_indices))
+
     prev_loss = sys.maxsize
-    for i in range(n_epochs):
+    for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
-    # TODO: fix factor Z, perform SGD on U
-        for j in range(n_samples):
-
-            index = np.random.choice(range(len(observed_indices)))
-            index = observed_indices[index]
-            u[index[0],:] -= alpha * (data[index[0], index[1]] - np.dot(u[index[0], :], z[index[1], :])) * z[index[1], :] 
-
-
-    # TODO: fix factor U, perform SGD on Z
         for j in range(n_samples):
             index = np.random.choice(range(len(observed_indices)))
-            index = observed_indices[index]
-            z[index[1],:] -= alpha * (data[index[0], index[1]] - np.dot(u[index[0], :], z[index[1], :])) * u[index[0], :] 
-
-    # TODO: test for convergence or max_iterations otherwise repeat the above 
-
+            k, l = observed_indices[index]
+            u[k, :] -= LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
+                    * z[l, :]
+        for j in range(n_samples):
+            index = np.random.choice(range(len(observed_indices)))
+            k, l = observed_indices[index]
+            z[l, :] -= LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
+                    * u[k, :]
         prod = np.matmul(u, z.T)
         prod[data == 0] = 0
         diff = data - prod
@@ -120,8 +111,7 @@ def predict_by_sgd(data, approximation_rank):
         print("Loss {0}".format(loss))
         if (prev_loss - loss) / loss < epsilon:
             break
-
-    return np.dot(u, z.T)       
+    return np.dot(u, z.T)
 
 
 
@@ -129,7 +119,7 @@ def main():
     all_ratings = load_ratings('../data/data_train.csv')
     data_matrix = ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
     #test_predict_by_avg()
-    imputed_data = predict_by_avg(data_matrix, True)
+    #imputed_data = predict_by_avg(data_matrix, True)
     #reconstruction = predict_by_svd(imputed_data, 2)
     reconstruction = predict_by_sgd(data_matrix, 10)
     reconstruction_to_predictions(reconstruction)
