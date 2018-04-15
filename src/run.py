@@ -11,6 +11,7 @@ SUBMISSION_FILE = '../data/submission_sgd.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 N_EPOCHS = 5
 LEARNING_RATE = 0.05
+EPSILON = 0.0001
 
 def load_ratings(data_file):
     """Loads the rating data from the specified file.
@@ -87,12 +88,12 @@ def predict_by_svd(data, approximation_rank):
 def predict_by_sgd(data, approximation_rank):
     row_indices, col_indices = np.where(data != 0)
     observed_indices = list(zip(row_indices, col_indices))
-    u = np.random.rand(data.shape[0], approximation_rank) * 4 + 1
-    z = np.random.rand(data.shape[1], approximation_rank) * 4 + 1
+    u = np.random.rand(data.shape[0], approximation_rank) 
+    z = np.random.rand(data.shape[1], approximation_rank) 
 
-    n_samples = int(0.001 * len(observed_indices))
+    n_samples = int(0.01 * len(observed_indices))
 
-    prev_loss = sys.maxsize
+    prev_loss = sys.float_info.max
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
 
@@ -101,6 +102,9 @@ def predict_by_sgd(data, approximation_rank):
             k, l = observed_indices[index]
             u[k, :] -= LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
                     * z[l, :]
+            #print(LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
+                    #* z[l, :])
+
         for j in range(n_samples):
             index = np.random.randint(0, len(observed_indices) - 1)
             k, l = observed_indices[index]
@@ -113,8 +117,10 @@ def predict_by_sgd(data, approximation_rank):
         square = np.multiply(diff, diff)
         loss = np.sum(square)
         print("Loss {0}".format(loss))
-        if (prev_loss - loss) / loss < epsilon:
+        print("Loss ratio {0}: ".format((prev_loss - loss) / loss))
+        if (prev_loss - loss) / loss < EPSILON:
             break
+        prev_loss = loss
     return np.dot(u, z.T)
 
 
