@@ -9,7 +9,7 @@ USER_COUNT = 10000
 ITEM_COUNT = 1000
 SUBMISSION_FILE = '../data/submission_sgd.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
-N_EPOCHS = 5
+N_EPOCHS = 20
 LEARNING_RATE = 0.05
 EPSILON = 0.0001
 
@@ -91,7 +91,7 @@ def predict_by_sgd(data, approximation_rank):
     u = np.random.rand(data.shape[0], approximation_rank) 
     z = np.random.rand(data.shape[1], approximation_rank) 
 
-    n_samples = int(0.01 * len(observed_indices))
+    n_samples = int(0.05 * len(observed_indices))
 
     prev_loss = sys.float_info.max
     for i in range(N_EPOCHS):
@@ -100,7 +100,7 @@ def predict_by_sgd(data, approximation_rank):
         for j in range(n_samples):
             index = np.random.randint(0, len(observed_indices) - 1)
             k, l = observed_indices[index]
-            u[k, :] -= LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
+            u[k, :] += LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
                     * z[l, :]
             #print(LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
                     #* z[l, :])
@@ -108,7 +108,7 @@ def predict_by_sgd(data, approximation_rank):
         for j in range(n_samples):
             index = np.random.randint(0, len(observed_indices) - 1)
             k, l = observed_indices[index]
-            z[l, :] -= LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
+            z[l, :] += LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
                     * u[k, :]
 
         prod = np.matmul(u, z.T)
