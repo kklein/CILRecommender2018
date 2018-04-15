@@ -87,9 +87,7 @@ def predict_by_sgd(data, approximation_rank):
     observed_indices = list(zip(row_indices, col_indices))
     u = np.random.rand(data.shape[0], approximation_rank) * 4 + 1
     z = np.random.rand(data.shape[1], approximation_rank) * 4 + 1
-
     n_samples = int(0.001 * len(observed_indices))
-
     prev_loss = sys.maxsize
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
