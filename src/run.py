@@ -1,16 +1,14 @@
 import sys
-import time
 import numpy as np
-
 
 # Rows are users
 USER_COUNT = 10000
 # Columns are items
 ITEM_COUNT = 1000
-SUBMISSION_FILE = '../data/submission_sgd.csv'
+SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
-N_EPOCHS = 20
-LEARNING_RATE = 0.05
+N_EPOCHS = 50
+LEARNING_RATE = 0.001
 EPSILON = 0.0001
 
 def load_ratings(data_file):
@@ -85,12 +83,17 @@ def predict_by_svd(data, approximation_rank):
     vh = vh[0:approximation_rank, :]
     return np.dot(u, np.dot(np.diag(s), vh))
 
+def clip(data):
+    data[data > 5] = 5
+    data[data < 1] = 1
+    return data
+
 def predict_by_sgd(data, approximation_rank):
     row_indices, col_indices = np.where(data != 0)
     observed_indices = list(zip(row_indices, col_indices))
     u = np.random.rand(data.shape[0], approximation_rank)
     z = np.random.rand(data.shape[1], approximation_rank)
-    n_samples = int(0.05 * len(observed_indices))
+    n_samples = int(0.1 * len(observed_indices))
     prev_loss = sys.float_info.max
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
@@ -125,9 +128,10 @@ def main():
     all_ratings = load_ratings('../data/data_train.csv')
     data_matrix = ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
     #test_predict_by_avg()
-    #imputed_data = predict_by_avg(data_matrix, True)
-    #reconstruction = predict_by_svd(imputed_data, 2)
-    reconstruction = predict_by_sgd(data_matrix, 10)
+    imputed_data = predict_by_avg(data_matrix, True)
+    reconstruction = predict_by_svd(imputed_data, 10)
+    #reconstruction = predict_by_sgd(data_matrix, 10)
+    reconstruction = clip(reconstruction)
     reconstruction_to_predictions(reconstruction)
 
 if __name__ == '__main__':
