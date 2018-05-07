@@ -11,7 +11,7 @@ import copy
 USER_COUNT = 10000
 # Columns are items
 ITEM_COUNT = 1000
-SUBMISSION_FILE = '../data/submission_sgd.csv'
+SUBMISSION_FILE = '../data/submission_nn.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 N_EPOCHS = 20
 LEARNING_RATE = 0.01
@@ -177,13 +177,15 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
 
     indices_to_predict = get_indices_to_predict()
     counter = 0
+
+    # TODO: Remove y_validate, these are the values we want to predict!
     for i, j in indices_to_predict:
         x = np.concatenate([user_embeddings[i], item_embeddings[j]])
         y = data_matrix[i, j]
         x_validate.append(x)
         y_validate.append(y)
         counter += 1
-        if counter > 100:
+        if False:
             break
         elif counter % 1000 == 0:
             print(counter)
@@ -193,6 +195,15 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
     y_validate = np.ravel(y_validate)
 
     return x_train, y_train, x_validate, y_validate
+
+def write_nn_predictions(data_matrix, y_predicted):
+
+    indices_to_predict = get_indices_to_predict()
+    for a, index in enumerate(indices_to_predict):
+        data_matrix[index] = y_predicted[a]
+
+    reconstruction_to_predictions(data_matrix)
+
 
 
 def predict_by_nn(data_matrix, imputed_data):
@@ -209,6 +220,10 @@ def predict_by_nn(data_matrix, imputed_data):
     classifier.fit(x_train, y_train)
     accuracy = classifier.score(x_test, y_test)
     print(accuracy)
+
+    y_predicted = classifier.predict(x_validate)
+    write_nn_predictions(data_matrix, y_predicted)
+
 
 
 def main():
