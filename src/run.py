@@ -5,14 +5,15 @@ import utils
 
 SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
-N_EPOCHS = 100
+SCORE_FILE = '../data/sgd_scores.csv'
+N_EPOCHS = 20
 LEARNING_RATE = 0.001
-REGULARIZATION = 0.002
+REGULARIZATION = 0.000
 EPSILON = 0.0001
 
 def reconstruction_to_predictions(unobserved_indeces, reconstruction):
     predictions = []
-    for i,j in unobserved_indeces:
+    for i, j in unobserved_indeces:
         predictions.append((i + 1, j + 1, reconstruction[i, j]))
     write_ratings(predictions)
 
@@ -21,6 +22,10 @@ def write_ratings(predictions):
         file.write('Id,Prediction\n')
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
+
+def write_sgd_score(score, k, Lambda):
+    with open(SCORE_FILE, 'a+') as file:
+        file.write('%d, %f, %f' % (k, Lambda, score))
 
 def predict_by_avg(data, by_row):
     data = data.T if by_row else data
@@ -84,7 +89,7 @@ def clip(data):
     data[data < 1] = 1
     return data
 
-def predict_by_sgd(data, approximation_rank):
+def predict_by_sgd(data, approximation_rank, Lambda):
     observed_indices = utils.get_observed_indeces(data)
     #u = np.random.rand(data.shape[0], approximation_rank)
     #z = np.random.rand(data.shape[1], approximation_rank)
@@ -92,6 +97,7 @@ def predict_by_sgd(data, approximation_rank):
     z = np.random.rand(data.shape[1], approximation_rank)
     n_samples = int(0.1 * len(observed_indices))
     prev_loss = sys.float_info.max
+    # rsmes = []
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
 
@@ -100,9 +106,13 @@ def predict_by_sgd(data, approximation_rank):
             k, l = observed_indices[index]
             residual = data[k, l] - np.dot(u[k, :], z[l, :])
             u_update = LEARNING_RATE * (residual * z[l, :] - \
-                    REGULARIZATION * np.linalg.norm(u[k, :]))
+                    # REGULARIZATION * np.linalg.norm(u[k, :]))
+                    Lambda * np.linalg.norm(u[k, :]))
+
             z_update = LEARNING_RATE * (residual * u[k, :] - \
-                    REGULARIZATION * np.linalg.norm(z[l, :]))
+                    # REGULARIZATION * np.linalg.norm(z[l, :]))
+                    Lambda * np.linalg.norm(z[l, :]))
+
             u[k, :] += u_update
             z[l, :] += z_update
 
@@ -116,16 +126,25 @@ def predict_by_sgd(data, approximation_rank):
         if (prev_loss - loss) / loss < EPSILON:
             break
         prev_loss = loss
-    return np.dot(u, z.T)
+        # rsmes.append((i, utils.compute_rsme(data, prod)))
+    # x, y = zip(*rsmes)
+    # plt.plot(x, y)
+    # plt.show()
+    reconstruction = np.dot(u, z.T)
+    rsme = utils.compute_rsme(data, reconstruction)
+    write_sgd_score(rsme, k, Lambda)
+    return reconstruction
 
 def main():
+    k = int(sys.argv[1])
+    Lambda = float(sys.argv[2])
     all_ratings = utils.load_ratings('../data/data_train.csv')
     data_matrix = utils.ratings_to_matrix(all_ratings)
     #test_predict_by_avg()
     #imputed_data = predict_by_avg(data_matrix, True)
     #imputed_data = predict_bias(data_matrix)
     #reconstruction = predict_by_svd(imputed_data, 10)
-    reconstruction = predict_by_sgd(data_matrix, 20)
+    reconstruction = predict_by_sgd(data_matrix, k, Lambda)
     reconstruction = clip(reconstruction)
     rsme = utils.compute_rsme(data_matrix, reconstruction)
     print('RSME: %f' % rsme)
