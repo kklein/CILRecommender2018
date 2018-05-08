@@ -143,9 +143,11 @@ def predict_by_sgd(data, approximation_rank):
     return np.dot(u, z.T)
 
 
-def get_embeddings_by_svd(data):
+def get_embeddings_by_svd(data, embedding_dimension):
     """Given data matrix, returns user embeddings and item embeddings."""
     u, s, vh = np.linalg.svd(data)
+    u = u[:, :embedding_dimension]
+    vh = vh[:embedding_dimension, :]
     return u, vh.T
 
 
@@ -157,7 +159,6 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
     y_train = []
 
     x_validate = []
-    y_validate = []
 
     counter = 0
     for i, j in zip(*np.nonzero(data_matrix)):
@@ -166,7 +167,7 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
         x_train.append(x)
         y_train.append(y)
         counter += 1
-        if counter > 1000:
+        if counter > 10000:
             break
         elif counter % 1000 == 0:
             print(counter)
@@ -195,7 +196,10 @@ def write_nn_predictions(data_matrix, y_predicted):
 
     indices_to_predict = get_indices_to_predict()
     for a, index in enumerate(indices_to_predict):
-        data_matrix[index] = y_predicted[a]
+        if a < len(y_predicted):
+            data_matrix[index] = y_predicted[a]
+        else:
+            data_matrix[index] = 3
 
     reconstruction_to_predictions(data_matrix)
 
@@ -204,7 +208,7 @@ def write_nn_predictions(data_matrix, y_predicted):
 def predict_by_nn(data_matrix, imputed_data):
 
     # Get embeddings
-    user_embeddings, item_embeddings = get_embeddings_by_svd(imputed_data)
+    user_embeddings, item_embeddings = get_embeddings_by_svd(imputed_data, 3)
 
     x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
     print(y_train)
