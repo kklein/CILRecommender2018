@@ -178,12 +178,9 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
     indices_to_predict = get_indices_to_predict()
     counter = 0
 
-    # TODO: Remove y_validate, these are the values we want to predict!
     for i, j in indices_to_predict:
         x = np.concatenate([user_embeddings[i], item_embeddings[j]])
-        y = data_matrix[i, j]
         x_validate.append(x)
-        y_validate.append(y)
         counter += 1
         if False:
             break
@@ -191,10 +188,8 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
             print(counter)
 
     x_validate = np.asarray(x_validate)
-    y_validate = np.asarray(y_validate)
-    y_validate = np.ravel(y_validate)
 
-    return x_train, y_train, x_validate, y_validate
+    return x_train, y_train, x_validate
 
 def write_nn_predictions(data_matrix, y_predicted):
 
@@ -211,7 +206,7 @@ def predict_by_nn(data_matrix, imputed_data):
     # Get embeddings
     user_embeddings, item_embeddings = get_embeddings_by_svd(imputed_data)
 
-    x_train, y_train, x_validate, y_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
+    x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
     print(y_train)
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
 
