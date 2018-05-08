@@ -1,11 +1,12 @@
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Rows are users
 USER_COUNT = 10000
 # Columns are items
 ITEM_COUNT = 1000
-SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
+SUBMISSION_FILE = '../data/submission_svd_bias.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 N_EPOCHS = 50
 LEARNING_RATE = 0.001
@@ -70,6 +71,42 @@ def predict_by_avg(data, by_row):
         row[empty] = row_sum / np.count_nonzero(row)
     return data.T if by_row else data
 
+def predict_bias(data):
+    total_average = np.mean(data[np.nonzero(data)])
+    row_biases = np.zeros(data.shape[0])
+    col_biases = np.zeros(data.shape[1])
+
+    for row_index in range(data.shape[0]):
+        row_biases[row_index] = np.sum(data[row_index]) / \
+                np.count_nonzero(data[row_index]) - total_average
+
+    plt.hist(row_biases)
+    plt.show()
+
+    for col_index in range(data.shape[1]):
+        col_biases[col_index] = np.sum(data[:][col_index]) / \
+                np.count_nonzero(data[:][col_index]) - total_average
+
+    plt.hist(col_biases)
+    plt.show()
+
+    counter = 0
+    values = np.zeros(10000000)
+
+    for row_index in range(data.shape[0]):
+        for col_index in range(data.shape[1]):
+            if data[row_index, col_index] == 0:
+                new_value = total_average + \
+                        row_biases[row_index] + col_biases[col_index]
+                data[row_index, col_index] = new_value
+                values[counter] = new_value
+                counter += 1
+    plt.hist(values)
+    plt.show()
+
+    print('filled %d many holes' % counter)
+    return data
+
 def test_predict_by_avg():
     a = np.array([[1, 0, 2], [0, 2, 3], [0, 0, 1]])
     expected_array = np.array([[1, 2, 2], [1, 2, 3], [1, 2, 1]])
@@ -128,7 +165,8 @@ def main():
     all_ratings = load_ratings('../data/data_train.csv')
     data_matrix = ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
     #test_predict_by_avg()
-    imputed_data = predict_by_avg(data_matrix, True)
+    # imputed_data = predict_by_avg(data_matrix, True)
+    imputed_data = predict_bias(data_matrix)
     reconstruction = predict_by_svd(imputed_data, 10)
     #reconstruction = predict_by_sgd(data_matrix, 10)
     reconstruction = clip(reconstruction)
