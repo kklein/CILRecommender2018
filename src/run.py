@@ -1,9 +1,9 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+=======
+import utils
 
-# Rows are users
-USER_COUNT = 10000
 # Columns are items
 ITEM_COUNT = 1000
 SUBMISSION_FILE = '../data/submission_reg_sgd.csv'
@@ -12,39 +12,6 @@ N_EPOCHS = 100
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.002
 EPSILON = 0.0001
-
-def load_ratings(data_file):
-    """Loads the rating data from the specified file.
-    Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
-    Assumes the file has a header (which is ignored), and that the ratings are
-    then specified as 'rXXX_cXXX,X', where the 'X' blanks specify the row, the
-    column, and then the actual (integer) rating.
-    """
-    ratings = []
-    with open(data_file, 'r') as file:
-        header = file.readline()
-        # print("Header: %s" % header)
-        for line in file:
-            key, value_string = line.split(",")
-            rating = int(value_string)
-            row_string, col_string = key.split("_")
-            row = int(row_string[1:])
-            col = int(col_string[1:])
-
-            if rating < 1 or rating > 5:
-                raise ValueError("Found illegal rating value [%d]." % rating)
-
-            ratings.append((row - 1, col - 1, rating))
-    return ratings
-
-def ratings_to_matrix(ratings, matrix_rows, matrix_cols):
-    """Converts a list of ratings to a numpy matrix."""
-    print("Building [%d x %d] rating matrix." % (matrix_rows, matrix_cols))
-    matrix = np.zeros([matrix_rows, matrix_cols])
-    for (row, col, rating) in ratings:
-        matrix[row, col] = rating
-    print("Finished building rating matrix.")
-    return matrix
 
 def reconstruction_to_predictions(reconstruction):
     predictions = []
@@ -127,13 +94,12 @@ def clip(data):
     return data
 
 def predict_by_sgd(data, approximation_rank):
-    row_indices, col_indices = np.where(data != 0)
-    observed_indices = list(zip(row_indices, col_indices))
+    observed_indices = utils.get_observed_indeces(data)
     #u = np.random.rand(data.shape[0], approximation_rank)
     #z = np.random.rand(data.shape[1], approximation_rank)
-    u = np.ones((data.shape[0], approximation_rank)) * 0.1
-    z = np.ones((data.shape[1], approximation_rank)) * 0.1
-    n_samples = int(.1 * len(observed_indices))
+    u = np.random.rand(data.shape[0], approximation_rank)
+    z = np.random.rand(data.shape[1], approximation_rank)
+    n_samples = int(0.1 * len(observed_indices))
     prev_loss = sys.float_info.max
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
@@ -162,8 +128,8 @@ def predict_by_sgd(data, approximation_rank):
     return np.dot(u, z.T)
 
 def main():
-    all_ratings = load_ratings('../data/data_train.csv')
-    data_matrix = ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
+    all_ratings = utils.load_ratings('../data/data_train.csv')
+    data_matrix = utils.ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
     #test_predict_by_avg()
     #imputed_data = predict_by_avg(data_matrix, True)
     #imputed_data = predict_bias(data_matrix)
