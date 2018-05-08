@@ -44,6 +44,10 @@ def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
     return list(zip(row_indices, col_indices))
 
+def get_unobserved_indeces(data):
+    row_indices, col_indices = np.where(data == 0)
+    return list(zip(row_indices, col_indices))
+
 def get_indeces_from_file(file_name):
     indeces = []
     with open(file_name, 'r') as file:
@@ -53,3 +57,10 @@ def get_indeces_from_file(file_name):
             i, j = line.split(",")
             indeces.append((int(i), int(j)))
     return indeces
+
+def compute_rsme(data, prediction):
+    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    squared_error = 0
+    for i, j in validation_indices:
+        squared_error += (data[i][j] - prediction[i][j]) ** 2
+    return np.sqrt(squared_error / len(validation_indices))

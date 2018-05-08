@@ -10,16 +10,10 @@ LEARNING_RATE = 0.001
 REGULARIZATION = 0.002
 EPSILON = 0.0001
 
-def reconstruction_to_predictions(reconstruction):
+def reconstruction_to_predictions(unobserved_indeces, reconstruction):
     predictions = []
-    with open(SAMPLE_SUBMISSION, 'r') as file:
-        header = file.readline()
-        for line in file:
-            key, value_string = line.split(",")
-            row_string, col_string = key.split("_")
-            i = int(row_string[1:])
-            j = int(col_string[1:])
-            predictions.append((i, j, reconstruction[i-1, j-1]))
+    for i,j in unobserved_indeces:
+        predictions.append((i + 1, j + 1, reconstruction[i, j]))
     write_ratings(predictions)
 
 def write_ratings(predictions):
@@ -133,7 +127,10 @@ def main():
     #reconstruction = predict_by_svd(imputed_data, 10)
     reconstruction = predict_by_sgd(data_matrix, 20)
     reconstruction = clip(reconstruction)
-    reconstruction_to_predictions(reconstruction)
+    rsme = utils.compute_rsme(data_matrix, reconstruction)
+    print('RSME: %f' % rsme)
+    unobserved_indeces = utils.get_unobserved_indeces(data_matrix)
+    reconstruction_to_predictions(unobserved_indeces, reconstruction)
 
 if __name__ == '__main__':
     main()
