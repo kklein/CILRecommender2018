@@ -1,12 +1,9 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-=======
 import utils
 
-# Columns are items
-ITEM_COUNT = 1000
-SUBMISSION_FILE = '../data/submission_reg_sgd.csv'
+SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 N_EPOCHS = 100
 LEARNING_RATE = 0.001
@@ -129,7 +126,7 @@ def predict_by_sgd(data, approximation_rank):
 
 def main():
     all_ratings = utils.load_ratings('../data/data_train.csv')
-    data_matrix = utils.ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
+    data_matrix = utils.ratings_to_matrix(all_ratings)
     #test_predict_by_avg()
     #imputed_data = predict_by_avg(data_matrix, True)
     #imputed_data = predict_bias(data_matrix)

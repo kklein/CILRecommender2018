@@ -1,5 +1,10 @@
 import numpy as np
 
+ITEM_COUNT = 1000
+USER_COUNT = 10000
+TRAINING_FILE_NAME = '../data/trainingIndices.csv'
+VALIDATION_FILE_NAME = '../data/validationIndices.csv'
+
 def load_ratings(data_file):
     """Loads the rating data from the specified file.
     Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
@@ -24,8 +29,10 @@ def load_ratings(data_file):
             ratings.append((row - 1, col - 1, rating))
     return ratings
 
-def ratings_to_matrix(ratings, matrix_rows, matrix_cols):
+def ratings_to_matrix(ratings):
     """Converts a list of ratings to a numpy matrix."""
+    matrix_rows = USER_COUNT
+    matrix_cols = ITEM_COUNT
     print("Building [%d x %d] rating matrix." % (matrix_rows, matrix_cols))
     matrix = np.zeros([matrix_rows, matrix_cols])
     for (row, col, rating) in ratings:
@@ -36,3 +43,13 @@ def ratings_to_matrix(ratings, matrix_rows, matrix_cols):
 def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
     return list(zip(row_indices, col_indices))
+
+def get_indeces_from_file(file_name):
+    indeces = []
+    with open(file_name, 'r') as file:
+        header = file.readline()
+        # print("Header: %s" % header)
+        for line in file:
+            i, j = line.split(",")
+            indeces.append((int(i), int(j)))
+    return indeces
