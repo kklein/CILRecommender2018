@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 USER_COUNT = 10000
 # Columns are items
 ITEM_COUNT = 1000
-SUBMISSION_FILE = '../data/submission_svd_bias.csv'
+SUBMISSION_FILE = '../data/submission_reg_sgd.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
-N_EPOCHS = 50
+N_EPOCHS = 100
 LEARNING_RATE = 0.001
+REGULARIZATION = 0.002
 EPSILON = 0.0001
 
 def load_ratings(data_file):
@@ -128,33 +129,32 @@ def clip(data):
 def predict_by_sgd(data, approximation_rank):
     row_indices, col_indices = np.where(data != 0)
     observed_indices = list(zip(row_indices, col_indices))
-    u = np.random.rand(data.shape[0], approximation_rank)
-    z = np.random.rand(data.shape[1], approximation_rank)
-    n_samples = int(0.1 * len(observed_indices))
+    #u = np.random.rand(data.shape[0], approximation_rank)
+    #z = np.random.rand(data.shape[1], approximation_rank)
+    u = np.ones((data.shape[0], approximation_rank)) * 0.1
+    z = np.ones((data.shape[1], approximation_rank)) * 0.1
+    n_samples = int(.1 * len(observed_indices))
     prev_loss = sys.float_info.max
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
 
-        for j in range(n_samples):
+        for sample_index in range(n_samples):
             index = np.random.randint(0, len(observed_indices) - 1)
             k, l = observed_indices[index]
-            u[k, :] += LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
-                    * z[l, :]
-            #print(LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
-                    #* z[l, :])
-
-        for j in range(n_samples):
-            index = np.random.randint(0, len(observed_indices) - 1)
-            k, l = observed_indices[index]
-            z[l, :] += LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
-                    * u[k, :]
+            residual = data[k, l] - np.dot(u[k, :], z[l, :])
+            u_update = LEARNING_RATE * (residual * z[l, :] - \
+                    REGULARIZATION * np.linalg.norm(u[k, :]))
+            z_update = LEARNING_RATE * (residual * u[k, :] - \
+                    REGULARIZATION * np.linalg.norm(z[l, :]))
+            u[k, :] += u_update
+            z[l, :] += z_update
 
         prod = np.matmul(u, z.T)
         prod[data == 0] = 0
         diff = data - prod
         square = np.multiply(diff, diff)
         loss = np.sum(square)
-        print("Loss {0}".format(loss))
+        print("Loss: {0}".format(loss))
         print("Loss ratio {0}: ".format((prev_loss - loss) / loss))
         if (prev_loss - loss) / loss < EPSILON:
             break
@@ -165,10 +165,10 @@ def main():
     all_ratings = load_ratings('../data/data_train.csv')
     data_matrix = ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
     #test_predict_by_avg()
-    # imputed_data = predict_by_avg(data_matrix, True)
-    imputed_data = predict_bias(data_matrix)
-    reconstruction = predict_by_svd(imputed_data, 10)
-    #reconstruction = predict_by_sgd(data_matrix, 10)
+    #imputed_data = predict_by_avg(data_matrix, True)
+    #imputed_data = predict_bias(data_matrix)
+    #reconstruction = predict_by_svd(imputed_data, 10)
+    reconstruction = predict_by_sgd(data_matrix, 20)
     reconstruction = clip(reconstruction)
     reconstruction_to_predictions(reconstruction)
 
