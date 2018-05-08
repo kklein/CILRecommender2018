@@ -2,10 +2,6 @@ import sys
 import numpy as np
 import utils
 
-# Columns are items
-ITEM_COUNT = 1000
-# Rows are users
-USER_COUNT = 10000
 SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 N_EPOCHS = 50
@@ -93,7 +89,7 @@ def predict_by_sgd(data, approximation_rank):
 
 def main():
     all_ratings = utils.load_ratings('../data/data_train.csv')
-    data_matrix = utils.ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
+    data_matrix = utils.ratings_to_matrix(all_ratings)
     #test_predict_by_avg()
     #imputed_data = predict_by_avg(data_matrix, True)
     #reconstruction = predict_by_svd(imputed_data, 10)
