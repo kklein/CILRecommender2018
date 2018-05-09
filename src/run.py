@@ -6,7 +6,7 @@ import utils
 SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 SCORE_FILE = '../data/sgd_scores.csv'
-N_EPOCHS = 20
+N_EPOCHS = 150
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.000
 EPSILON = 0.0001
@@ -25,7 +25,7 @@ def write_ratings(predictions):
 
 def write_sgd_score(score, k, Lambda):
     with open(SCORE_FILE, 'a+') as file:
-        file.write('%d, %f, %f' % (k, Lambda, score))
+        file.write('%d, %f, %f\n' % (k, Lambda, score))
 
 def predict_by_avg(data, by_row):
     data = data.T if by_row else data
@@ -95,7 +95,7 @@ def predict_by_sgd(data, approximation_rank, Lambda):
     #z = np.random.rand(data.shape[1], approximation_rank)
     u = np.random.rand(data.shape[0], approximation_rank)
     z = np.random.rand(data.shape[1], approximation_rank)
-    n_samples = int(0.1 * len(observed_indices))
+    n_samples = int(0.2 * len(observed_indices))
     prev_loss = sys.float_info.max
     # rsmes = []
     for i in range(N_EPOCHS):
@@ -132,7 +132,7 @@ def predict_by_sgd(data, approximation_rank, Lambda):
     # plt.show()
     reconstruction = np.dot(u, z.T)
     rsme = utils.compute_rsme(data, reconstruction)
-    write_sgd_score(rsme, k, Lambda)
+    write_sgd_score(rsme, approximation_rank, Lambda)
     return reconstruction
 
 def main():
