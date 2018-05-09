@@ -25,7 +25,7 @@ def write_ratings(predictions):
 
 def write_sgd_score(score, k, Lambda):
     with open(SCORE_FILE, 'a+') as file:
-        file.write('%d, %f, %f' % (k, Lambda, score))
+        file.write('%d, %f, %f\n' % (k, Lambda, score))
 
 def predict_by_avg(data, by_row):
     data = data.T if by_row else data
@@ -132,7 +132,7 @@ def predict_by_sgd(data, approximation_rank, Lambda):
     # plt.show()
     reconstruction = np.dot(u, z.T)
     rsme = utils.compute_rsme(data, reconstruction)
-    write_sgd_score(rsme, k, Lambda)
+    write_sgd_score(rsme, approximation_rank, Lambda)
     return reconstruction
 
 def main():
