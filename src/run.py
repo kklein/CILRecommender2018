@@ -4,8 +4,9 @@ import numpy as np
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 import copy
-
+from sklearn.decomposition import NMF
 
 # Rows are users
 USER_COUNT = 10000
@@ -145,11 +146,19 @@ def predict_by_sgd(data, approximation_rank):
 
 def get_embeddings_by_svd(data, embedding_dimension):
     """Given data matrix, returns user embeddings and item embeddings."""
+    print("Getting embeddings using SVD")
     u, s, vh = np.linalg.svd(data)
     u = u[:, :embedding_dimension]
     vh = vh[:embedding_dimension, :]
     return u, vh.T
 
+
+def get_embeddings_by_nmf(data, embedding_dimension):
+    print("Getting embeddings using NMF")
+    model = NMF(n_components=embedding_dimension, init='random', random_state=0)
+    w = model.fit_transform(data)
+    h = model.components_
+    return w, h.T
 
 def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
     """Concatenates user embeddings and item embeddings, and adds corresponding rating from data matrix.
@@ -167,10 +176,11 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
         x_train.append(x)
         y_train.append(y)
         counter += 1
-        if counter > 10000:
+        if counter > 100000:
             break
         elif counter % 1000 == 0:
-            print(counter)
+            pass
+            # print(counter)
 
     x_train = np.asarray(x_train)
     y_train = np.asarray(y_train)
@@ -186,7 +196,8 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
         if False:
             break
         elif counter % 1000 == 0:
-            print(counter)
+            pass
+            #print(counter)
 
     x_validate = np.asarray(x_validate)
 
@@ -208,17 +219,19 @@ def write_nn_predictions(data_matrix, y_predicted):
 def predict_by_nn(data_matrix, imputed_data):
 
     # Get embeddings
-    user_embeddings, item_embeddings = get_embeddings_by_svd(imputed_data, 3)
+    embedding_dimensions = 15
+    print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
+    user_embeddings, item_embeddings = get_embeddings_by_nmf(imputed_data, embedding_dimensions)
 
     x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
-    print(y_train)
+    # print(y_train)
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
-
-    classifier = MLPClassifier((50, 50))
-
+    print("Number of training examples: {0}".format(len(x_train)))
+    classifier = MLPRegressor((100,50))
+    print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
-    accuracy = classifier.score(x_test, y_test)
-    print(accuracy)
+    score = classifier.score(x_test, y_test)
+    print("Score: ", score)
 
     y_predicted = classifier.predict(x_validate)
     write_nn_predictions(data_matrix, y_predicted)
