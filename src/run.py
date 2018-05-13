@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils
 
-SUBMISSION_FILE = '../data/submission_svd_t_10_clipped.csv'
+SUBMISSION_FILE = '../data/submission_sgd.csv'
 SAMPLE_SUBMISSION = '../data/sampleSubmission.csv'
 SCORE_FILE = '../data/sgd_scores.csv'
 N_EPOCHS = 150
@@ -11,17 +11,23 @@ LEARNING_RATE = 0.001
 REGULARIZATION = 0.000
 EPSILON = 0.0001
 
-def reconstruction_to_predictions(unobserved_indeces, reconstruction):
-    predictions = []
-    for i, j in unobserved_indeces:
-        predictions.append((i + 1, j + 1, reconstruction[i, j]))
-    write_ratings(predictions)
-
 def write_ratings(predictions):
     with open(SUBMISSION_FILE, 'w') as file:
         file.write('Id,Prediction\n')
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
+
+def reconstruction_to_predictions(reconstruction):
+    predictions = []
+    with open(SAMPLE_SUBMISSION, 'r') as file:
+        header = file.readline()
+        for line in file:
+            key, value_string = line.split(",")
+            row_string, col_string = key.split("_")
+            i = int(row_string[1:])
+            j = int(col_string[1:])
+            predictions.append((i, j, reconstruction[i-1, j-1]))
+    write_ratings(predictions)
 
 def write_sgd_score(score, k, Lambda):
     with open(SCORE_FILE, 'a+') as file:
@@ -91,8 +97,6 @@ def clip(data):
 
 def predict_by_sgd(data, approximation_rank, Lambda):
     observed_indices = utils.get_observed_indeces(data)
-    #u = np.random.rand(data.shape[0], approximation_rank)
-    #z = np.random.rand(data.shape[1], approximation_rank)
     u = np.random.rand(data.shape[0], approximation_rank)
     z = np.random.rand(data.shape[1], approximation_rank)
     n_samples = int(0.2 * len(observed_indices))
@@ -131,8 +135,8 @@ def predict_by_sgd(data, approximation_rank, Lambda):
     # plt.plot(x, y)
     # plt.show()
     reconstruction = np.dot(u, z.T)
-    rsme = utils.compute_rsme(data, reconstruction)
-    write_sgd_score(rsme, approximation_rank, Lambda)
+    #rsme = utils.compute_rsme(data, reconstruction)
+    #write_sgd_score(rsme, approximation_rank, Lambda)
     return reconstruction
 
 def main():
@@ -148,8 +152,7 @@ def main():
     reconstruction = clip(reconstruction)
     rsme = utils.compute_rsme(data_matrix, reconstruction)
     print('RSME: %f' % rsme)
-    unobserved_indeces = utils.get_unobserved_indeces(data_matrix)
-    reconstruction_to_predictions(unobserved_indeces, reconstruction)
+    reconstruction_to_predictions(reconstruction)
 
 if __name__ == '__main__':
     main()
