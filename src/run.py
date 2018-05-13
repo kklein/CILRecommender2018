@@ -11,7 +11,7 @@ SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
 SAMPLE_SUBMISSION = os.path.join(utils.ROOT_DIR,\
         'data/sampleSubmission.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'data/sgd_scores.csv')
-N_EPOCHS = 150
+N_EPOCHS = 25
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.000
 EPSILON = 0.0001
@@ -85,7 +85,7 @@ def predict_bias(data):
 
 def predict_by_svd(data, approximation_rank):
     imputed_data = predict_by_avg(data, True)
-    #imputed_data = predict_bias(data)
+    # imputed_data = predict_bias(data)
     u_embeddings, singular_values, vh_embeddings =\
             np.linalg.svd(imputed_data)
     u_embeddings = u_embeddings[:, 0:approximation_rank]
@@ -101,8 +101,24 @@ def clip(data):
 
 def predict_by_sgd(data, approximation_rank, regularization):
     observed_indices = utils.get_observed_indeces(data)
+    total_average = np.mean(data[np.nonzero(data)])
     u_embedding = np.random.rand(data.shape[0], approximation_rank)
     z_embedding = np.random.rand(data.shape[1], approximation_rank)
+
+    u_bias = np.zeros(data.shape[0])
+    u_counters = np.zeros(data.shape[0])
+    z_bias = np.zeros(data.shape[1])
+    z_counters = np.zeros(data.shape[1])
+    for k, l in observed_indices:
+        u_bias[k] += data[k][l]
+        u_counters[k] += 1
+        z_bias[l] += data[k][l]
+        z_counters[l] += 1
+    for k in range(data.shape[0]):
+        u_bias[k] = (u_bias[k] / u_counters[k]) - total_average
+    for l in range(data.shape[1]):
+        z_bias[l] = (z_bias[l] / z_counters[l]) - total_average
+
     n_samples = int(0.2 * len(observed_indices))
     prev_loss = sys.float_info.max
     # rsmes = []
@@ -112,30 +128,41 @@ def predict_by_sgd(data, approximation_rank, regularization):
         for _ in range(n_samples):
             index = np.random.randint(0, len(observed_indices) - 1)
             k, l = observed_indices[index]
-            residual = data[k, l] - np.dot(u_embedding[k, :], \
-                    z_embedding[l, :])
+            residual = data[k, l] - total_average - u_bias[k] - z_bias[l]\
+                    - np.dot(u_embedding[k, :], z_embedding[l, :])
             u_update = LEARNING_RATE * (residual * z_embedding[l, :] - \
                     regularization * np.linalg.norm(u_embedding[k, :]))
             z_update = LEARNING_RATE * (residual * u_embedding[k, :] - \
                     regularization * np.linalg.norm(z_embedding[l, :]))
+            u_bias_update = LEARNING_RATE * (residual - regularization * \
+                    u_bias[k])
+            z_bias_update = LEARNING_RATE * (residual - regularization * \
+                    z_bias[l])
             u_embedding[k, :] += u_update
             z_embedding[l, :] += z_update
+            u_bias[k] += u_bias_update
+            z_bias[l] += z_bias_update
 
-        prod = np.matmul(u_embedding, z_embedding.T)
-        prod[data == 0] = 0
-        diff = data - prod
-        square = np.multiply(diff, diff)
-        loss = np.sum(square)
-        print("Loss: {0}".format(loss))
-        print("Loss ratio {0}: ".format((prev_loss - loss) / loss))
-        if (prev_loss - loss) / loss < EPSILON:
-            break
-        prev_loss = loss
+        # prod = np.matmul(u_embedding, z_embedding.T)
+        # prod[data == 0] = 0
+        # diff = data - prod
+        # square = np.multiply(diff, diff)
+        # loss = np.sum(square)
+        # print("Loss: {0}".format(loss))
+        # print("Loss ratio {0}: ".format((prev_loss - loss) / loss))
+        # if (prev_loss - loss) / loss < EPSILON:
+        #     break
+        # prev_loss = loss
         # rsmes.append((i, utils.compute_rsme(data, prod)))
     # x, y = zip(*rsmes)
     # plt.plot(x, y)
     # plt.show()
-    reconstruction = np.dot(u_embedding, z_embedding.T)
+    reconstruction = np.dot(u_embedding, z_embedding.T) + total_average
+    # TODO(kkkleindev): Replace this by appropriate broadcasting.
+    for l in range(data.shape[1]):
+        reconstruction[:, l] += u_bias
+    for k in range(data.shape[0]):
+        reconstruction[k, :] += z_bias
     rsme = utils.compute_rsme(data, reconstruction)
     write_sgd_score(rsme, approximation_rank, regularization)
     return reconstruction
@@ -147,7 +174,7 @@ def main():
     regularization = float(sys.argv[2])
     all_ratings = utils.load_ratings(DATA_FILE)
     data = utils.ratings_to_matrix(all_ratings)
-    #reconstruction = predict_by_svd(data, 10)
+    # reconstruction = predict_by_svd(data, 10)
     reconstruction = predict_by_sgd(data, k, regularization)
     reconstruction = clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)
