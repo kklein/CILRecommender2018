@@ -1,9 +1,14 @@
+import os
 import numpy as np
 
+#TODO(kkleindev): Find execution-folder-independent approach.
+ROOT_DIR = os.path.dirname(os.path.abspath(''))
+TRAINING_FILE_NAME = os.path.join(ROOT_DIR,\
+        'data/trainingIndices.csv')
+VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,\
+        'data/validationIndices.csv')
 ITEM_COUNT = 1000
 USER_COUNT = 10000
-TRAINING_FILE_NAME = '../data/trainingIndices.csv'
-VALIDATION_FILE_NAME = '../data/validationIndices.csv'
 
 def load_ratings(data_file):
     """Loads the rating data from the specified file.
@@ -14,8 +19,8 @@ def load_ratings(data_file):
     """
     ratings = []
     with open(data_file, 'r') as file:
-        header = file.readline()
-        # print("Header: %s" % header)
+        # Read header.
+        _ = file.readline()
         for line in file:
             key, value_string = line.split(",")
             rating = int(value_string)
@@ -51,8 +56,8 @@ def get_unobserved_indeces(data):
 def get_indeces_from_file(file_name):
     indeces = []
     with open(file_name, 'r') as file:
-        header = file.readline()
-        # print("Header: %s" % header)
+        # Read header.
+        _ = file.readline()
         for line in file:
             i, j = line.split(",")
             indeces.append((int(i), int(j)))
