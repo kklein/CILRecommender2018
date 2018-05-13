@@ -10,8 +10,8 @@ SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SAMPLE_SUBMISSION = os.path.join(utils.ROOT_DIR,\
         'data/sampleSubmission.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'data/sgd_scores.csv')
-N_EPOCHS = 25
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'data/rand_bias_sgd_scores.csv')
+N_EPOCHS = 150
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.000
 EPSILON = 0.0001
@@ -169,9 +169,13 @@ def predict_by_sgd(data, approximation_rank, regularization):
 
 def main():
     # k = 10
-    k = int(sys.argv[1])
+    #k = int(sys.argv[1])
     # regularization = REGULARIZATION
-    regularization = float(sys.argv[2])
+    #regularization = float(sys.argv[2])
+    ranks = [5 * i for i in range(1, 40)]
+    regularizations = [0.0005 * i for i in range(10)]
+    k = np.random.choice(ranks)
+    regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings(DATA_FILE)
     data = utils.ratings_to_matrix(all_ratings)
     # reconstruction = predict_by_svd(data, 10)
