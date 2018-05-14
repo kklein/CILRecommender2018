@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-df = pd.read_csv('../data/sgd_scores.csv', header=None, dtype=np.float64)
+df = pd.read_csv('non_biased_sgd_scores.csv', header=None, dtype=np.float64)
 
 fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)

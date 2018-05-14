@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('../data/rand_bias_sgd_scores.csv', header=None,
+df = pd.read_csv('biased_sgd_scores.csv', header=None,
         dtype=np.float64)
 
 # df = df.sort_values(by=0)
