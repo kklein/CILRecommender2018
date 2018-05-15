@@ -7,6 +7,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
 import copy
 from sklearn.decomposition import NMF
+from sklearn.decomposition import FactorAnalysis
+from sklearn.decomposition import PCA
 
 # Rows are users
 USER_COUNT = 10000
@@ -160,6 +162,42 @@ def get_embeddings_by_nmf(data, embedding_dimension):
     h = model.components_
     return w, h.T
 
+def get_embeddings_by_fa(data, embedding_dimension):
+    print("Getting embeddings using Factor Analysis")
+    model = FactorAnalysis(n_components=embedding_dimension)
+    w = model.fit_transform(data)
+    h = model.components_
+    return w, h.T
+	 
+def get_embeddings_by_pca(data, embedding_dimension):
+    print("Getting embeddings using PCA")
+    model_1 = PCA(n_components=embedding_dimension)
+    w = model_1.fit_transform(data)
+    h = model_1.fit_transform(data.T)
+    return w, h 
+
+def get_embeddings(data, embedding_type, embedding_dimension):
+    print("Getting embeddings using {0}".format(embedding_type))
+    if embedding_type == "svd":
+        u, s, vh = np.linalg.svd(data)
+        u = u[:, :embedding_dimension]
+        vh = vh[:embedding_dimension, :]
+        return u, vh.T
+    elif embedding_type == "pca":
+        print("Getting embeddings using PCA")
+        model_1 = PCA(n_components=embedding_dimension)
+        w = model_1.fit_transform(data)
+        h = model_1.fit_transform(data.T)
+        return w, h
+    else:
+        if embedding_type == "nmf":
+            model = NMF(n_components=embedding_dimension, init='random', random_state=0)
+        elif embedding_type == "fa":
+            model = FactorAnalysis(n_components=embedding_dimension)
+	
+        w = model.fit_transform(data)
+        h = model.components_
+        return w, h.T
 def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
     """Concatenates user embeddings and item embeddings, and adds corresponding rating from data matrix.
     Returns: x_train, y_train, x_validate, y_validate."""
@@ -219,15 +257,15 @@ def write_nn_predictions(data_matrix, y_predicted):
 def predict_by_nn(data_matrix, imputed_data):
 
     # Get embeddings
-    embedding_dimensions = 15
+    embedding_dimensions = 10
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
-    user_embeddings, item_embeddings = get_embeddings_by_nmf(imputed_data, embedding_dimensions)
+    user_embeddings, item_embeddings = get_embeddings(imputed_data,"svd" ,embedding_dimensions)
 
     x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
     # print(y_train)
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
     print("Number of training examples: {0}".format(len(x_train)))
-    classifier = MLPRegressor((100,50))
+    classifier = MLPRegressor((7,))
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
     score = classifier.score(x_test, y_test)
@@ -239,6 +277,7 @@ def predict_by_nn(data_matrix, imputed_data):
 
 
 def main():
+    np.random.seed(10)
     all_ratings = load_ratings('../data/data_train.csv')
     data_matrix = ratings_to_matrix(all_ratings, USER_COUNT, ITEM_COUNT)
     #test_predict_by_avg()
