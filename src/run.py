@@ -132,49 +132,7 @@ def predict_by_sgd(data, approximation_rank):
             k, l = observed_indices[index]
             z[l, :] += LEARNING_RATE * (data[k, l] - np.dot(u[k, :], z[l, :])) \
                     * u[k, :]
-
-        prod = np.matmul(u, z.T)
-        prod[data == 0] = 0
-        diff = data - prod
-        square = np.multiply(diff, diff)
-        loss = np.sum(square)
-        print("Loss {0}".format(loss))
-        print("Loss ratio {0}: ".format((prev_loss - loss) / loss))
-        if (prev_loss - loss) / loss < EPSILON:
-            break
-        prev_loss = loss
-    return np.dot(u, z.T)
-
-
-def get_embeddings_by_svd(data, embedding_dimension):
-    """Given data matrix, returns user embeddings and item embeddings."""
-    print("Getting embeddings using SVD")
-    u, s, vh = np.linalg.svd(data)
-    u = u[:, :embedding_dimension]
-    vh = vh[:embedding_dimension, :]
-    return u, vh.T
-
-
-def get_embeddings_by_nmf(data, embedding_dimension):
-    print("Getting embeddings using NMF")
-    model = NMF(n_components=embedding_dimension, init='random', random_state=0)
-    w = model.fit_transform(data)
-    h = model.components_
-    return w, h.T
-
-def get_embeddings_by_fa(data, embedding_dimension):
-    print("Getting embeddings using Factor Analysis")
-    model = FactorAnalysis(n_components=embedding_dimension)
-    w = model.fit_transform(data)
-    h = model.components_
-    return w, h.T
 	 
-def get_embeddings_by_pca(data, embedding_dimension):
-    print("Getting embeddings using PCA")
-    model_1 = PCA(n_components=embedding_dimension)
-    w = model_1.fit_transform(data)
-    h = model_1.fit_transform(data.T)
-    return w, h 
 
 def get_embeddings(data, embedding_type, embedding_dimension):
     print("Getting embeddings using {0}".format(embedding_type))
@@ -184,7 +142,6 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         vh = vh[:embedding_dimension, :]
         return u, vh.T
     elif embedding_type == "pca":
-        print("Getting embeddings using PCA")
         model_1 = PCA(n_components=embedding_dimension)
         w = model_1.fit_transform(data)
         h = model_1.fit_transform(data.T)
@@ -259,7 +216,7 @@ def predict_by_nn(data_matrix, imputed_data):
     # Get embeddings
     embedding_dimensions = 10
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
-    user_embeddings, item_embeddings = get_embeddings(imputed_data,"svd" ,embedding_dimensions)
+    user_embeddings, item_embeddings = get_embeddings(imputed_data,"pca" ,embedding_dimensions)
 
     x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
     # print(y_train)
