@@ -18,17 +18,6 @@ SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_nn.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores.csv')
 
-def predict_by_svd(data, approximation_rank):
-    imputed_data = utils.predict_by_avg(data, True)
-    # imputed_data = predict_bias(data)
-    u_embeddings, singular_values, vh_embeddings =\
-            np.linalg.svd(imputed_data)
-    u_embeddings = u_embeddings[:, 0:approximation_rank]
-    singular_values = singular_values[0:approximation_rank]
-    vh_embeddings = vh_embeddings[0:approximation_rank, :]
-    return np.dot(u_embeddings,\
-            np.dot(np.diag(singular_values), vh_embeddings))
-
 def get_embeddings(data, embedding_type, embedding_dimension):
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
@@ -136,11 +125,9 @@ def predict_by_nn(data_matrix, imputed_data):
 
 def main():
     np.random.seed(10)
-    all_ratings = utils.load_ratings('../data/data_train.csv')
+    all_ratings = utils.load_ratings()
     data_matrix = utils.ratings_to_matrix(all_ratings)
     imputed_data = utils.predict_by_avg(copy.copy(data_matrix), True)
-    #reconstruction = predict_by_svd(imputed_data, 2)
-    #reconstruction = predict_by_sgd(data_matrix, 10)
     #utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
     predict_by_nn(data_matrix, imputed_data)

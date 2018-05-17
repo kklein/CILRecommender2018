@@ -4,16 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils
 
-DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased_sgd_scores.csv')
 N_EPOCHS = 5
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.000
-
 EPSILON = 0.0001
-
 
 def write_sgd_score(score, k, regularization):
     with open(SCORE_FILE, 'a+') as file:
@@ -97,9 +94,8 @@ def main():
     # regularizations = [0.0005 * i for i in range(10)]
     # k = np.random.choice(ranks)
     # regularization = np.random.choice(regularizations)
-    all_ratings = utils.load_ratings(DATA_FILE)
+    all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
-    # reconstruction = predict_by_svd(data, 10)
     reconstruction = predict_by_sgd(data, k, regularization)
     reconstruction = utils.clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)

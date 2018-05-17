@@ -4,22 +4,25 @@ import matplotlib.pyplot as plt
 
 #TODO(kkleindev): Find execution-folder-independent approach.
 ROOT_DIR = os.path.dirname(os.path.abspath(''))
+DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
 TRAINING_FILE_NAME = os.path.join(ROOT_DIR,\
         'data/trainingIndices.csv')
 VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,\
         'data/validationIndices.csv')
+
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR,\
         'data/sampleSubmission.csv')
 ITEM_COUNT = 1000
 USER_COUNT = 10000
 
-def load_ratings(data_file):
+def load_ratings():
     """Loads the rating data from the specified file.
     Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
     Assumes the file has a header (which is ignored), and that the ratings are
     then specified as 'rXXX_cXXX,X', where the 'X' blanks specify the row, the
     column, and then the actual (integer) rating.
     """
+    data_file = DATA_FILE
     ratings = []
     with open(data_file, 'r') as file:
         # Read header.
