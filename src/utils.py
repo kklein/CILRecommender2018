@@ -2,8 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-#TODO(kkleindev): Find execution-folder-independent approach.
-ROOT_DIR = os.path.dirname(os.path.abspath(''))
+ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
 TRAINING_FILE_NAME = os.path.join(ROOT_DIR,\
         'data/trainingIndices.csv')
