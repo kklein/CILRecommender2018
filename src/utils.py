@@ -75,9 +75,9 @@ def get_indices_to_predict():
             indices_to_predict:  list of tuples with indices"""
     indices_to_predict = []
     with open(SAMPLE_SUBMISSION, 'r') as file:
-        header = file.readline()
+        _ = file.readline()
         for line in file:
-            key, value_string = line.split(",")
+            key, _ = line.split(",")
             row_string, col_string = key.split("_")
             i = int(row_string[1:]) - 1
             j = int(col_string[1:]) - 1
@@ -93,7 +93,7 @@ def write_ratings(predictions, submission_file):
 def reconstruction_to_predictions(reconstruction, submission_file):
     indices_to_predict = get_indices_to_predict()
     predictions = list(map(lambda t: \
-            (t[0],t[1], reconstruction[t[0] - 1, t[1] - 1]), \
+            (t[0], t[1], reconstruction[t[0] - 1, t[1] - 1]), \
             indices_to_predict))
     write_ratings(predictions, submission_file)
 

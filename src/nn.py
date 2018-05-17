@@ -1,16 +1,17 @@
-import sys
-import os
-import numpy as np
-import utils
-import sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
-from sklearn.neural_network import MLPRegressor
 import copy
+import os
+
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPRegressor
 from sklearn.decomposition import NMF
 from sklearn.decomposition import FactorAnalysis
 from sklearn.decomposition import PCA
 from sklearn.manifold import LocallyLinearEmbedding
+
+import numpy as np
+import utils
+
+
 
 
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
@@ -21,7 +22,7 @@ SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores.csv')
 def get_embeddings(data, embedding_type, embedding_dimension):
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
-        u, s, vh = np.linalg.svd(data)
+        u, _, vh = np.linalg.svd(data)
         u = u[:, :embedding_dimension]
         vh = vh[:embedding_dimension, :]
         return u, vh.T
@@ -47,7 +48,8 @@ def get_embeddings(data, embedding_type, embedding_dimension):
 
 
 def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
-    """Concatenates user embeddings and item embeddings, and adds corresponding rating from data matrix.
+    """Concatenates user embeddings and item embeddings, and adds corresponding
+    rating from data matrix.
     Returns: x_train, y_train, x_validate, y_validate."""
 
     x_train = []
@@ -79,6 +81,7 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
         x = np.concatenate([user_embeddings[i], item_embeddings[j]])
         x_validate.append(x)
         counter += 1
+        # TODO(heylook): conditional statement with constant value
         if False:
             break
         elif counter % 1000 == 0:
@@ -107,13 +110,14 @@ def predict_by_nn(data_matrix, imputed_data):
     # Get embeddings
     embedding_dimensions = 25
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
-    user_embeddings, item_embeddings = get_embeddings(imputed_data,"nmf" ,embedding_dimensions)
+    user_embeddings, item_embeddings = get_embeddings(imputed_data, "nmf",\
+            embedding_dimensions)
 
     x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
     # print(y_train)
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
     print("Number of training examples: {0}".format(len(x_train)))
-    classifier = MLPRegressor((100,50))
+    classifier = MLPRegressor((100, 50))
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
     score = classifier.score(x_test, y_test)
