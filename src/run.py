@@ -9,7 +9,7 @@ import copy
 from sklearn.decomposition import NMF
 from sklearn.decomposition import FactorAnalysis
 from sklearn.decomposition import PCA
-
+from sklearn.manifold import LocallyLinearEmbedding
 # Rows are users
 USER_COUNT = 10000
 # Columns are items
@@ -146,6 +146,11 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         w = model_1.fit_transform(data)
         h = model_1.fit_transform(data.T)
         return w, h
+    elif embedding_type == "lle":
+        model = LocallyLinearEmbedding()
+        w = model.fit_transform(data)
+        h = model.fit_transform(data.T)
+        return w, h 
     else:
         if embedding_type == "nmf":
             model = NMF(n_components=embedding_dimension, init='random', random_state=0)
@@ -214,15 +219,15 @@ def write_nn_predictions(data_matrix, y_predicted):
 def predict_by_nn(data_matrix, imputed_data):
 
     # Get embeddings
-    embedding_dimensions = 10
+    embedding_dimensions = 25
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
-    user_embeddings, item_embeddings = get_embeddings(imputed_data,"pca" ,embedding_dimensions)
+    user_embeddings, item_embeddings = get_embeddings(imputed_data,"nmf" ,embedding_dimensions)
 
     x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
     # print(y_train)
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
     print("Number of training examples: {0}".format(len(x_train)))
-    classifier = MLPRegressor((7,))
+    classifier = MLPRegressor((100,50))
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
     score = classifier.score(x_test, y_test)
