@@ -33,23 +33,15 @@ def write_ratings(predictions):
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
 def reconstruction_to_predictions(reconstruction):
-    predictions = []
-    with open(SAMPLE_SUBMISSION, 'r') as file:
-        # Read header.
-        _ = file.readline()
-        for line in file:
-            key, _ = line.split(",")
-            row_string, col_string = key.split("_")
-            i = int(row_string[1:])
-            j = int(col_string[1:])
-            predictions.append((i, j, reconstruction[i-1, j-1]))
+    indices_to_predict = get_indices_to_predict()
+    predictions = list(map(lambda t: \
+            (t[0],t[1], reconstruction[t[0] - 1, t[1] - 1]), \
+            indices_to_predict))
     write_ratings(predictions)
-
 
 def write_sgd_score(score, k, regularization):
     with open(SCORE_FILE, 'a+') as file:
         file.write('%d, %f, %f\n' % (k, regularization, score))
-
 
 def get_indices_to_predict():
     """Get list of indices to predict from sample submission file.
