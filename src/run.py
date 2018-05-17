@@ -17,8 +17,6 @@ from sklearn.manifold import LocallyLinearEmbedding
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
-SAMPLE_SUBMISSION = os.path.join(utils.ROOT_DIR,\
-        'data/sampleSubmission.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased_sgd_scores.csv')
 N_EPOCHS = 5
 LEARNING_RATE = 0.001
@@ -26,93 +24,12 @@ REGULARIZATION = 0.000
 
 EPSILON = 0.0001
 
-def write_ratings(predictions):
-    with open(SUBMISSION_FILE, 'w') as file:
-        file.write('Id,Prediction\n')
-        for i, j, prediction in predictions:
-            file.write('r%d_c%d,%f\n' % (i, j, prediction))
-
-def reconstruction_to_predictions(reconstruction):
-    indices_to_predict = get_indices_to_predict()
-    predictions = list(map(lambda t: \
-            (t[0],t[1], reconstruction[t[0] - 1, t[1] - 1]), \
-            indices_to_predict))
-    write_ratings(predictions)
-
 def write_sgd_score(score, k, regularization):
     with open(SCORE_FILE, 'a+') as file:
         file.write('%d, %f, %f\n' % (k, regularization, score))
 
-def get_indices_to_predict():
-    """Get list of indices to predict from sample submission file.
-        Returns:
-            indices_to_predict:  list of tuples with indices"""
-
-    indices_to_predict = []
-    with open(SAMPLE_SUBMISSION, 'r') as file:
-        header = file.readline()
-        for line in file:
-            key, value_string = line.split(",")
-            row_string, col_string = key.split("_")
-            i = int(row_string[1:]) - 1
-            j = int(col_string[1:]) - 1
-            indices_to_predict.append((i, j))
-
-    return indices_to_predict
-
-def write_ratings(predictions):
-    with open(SUBMISSION_FILE, 'w') as file:
-        file.write('Id,Prediction\n')
-        for i, j, prediction in predictions:
-            file.write('r%d_c%d,%f\n' % (i, j, prediction))
-
-
-def predict_by_avg(data, by_row):
-    data = data.T if by_row else data
-    for row in data:
-        empty = (row == 0)
-        row_sum = np.sum(row)
-        row[empty] = row_sum / np.count_nonzero(row)
-    return data.T if by_row else data
-
-def predict_bias(data):
-    total_average = np.mean(data[np.nonzero(data)])
-    row_biases = np.zeros(data.shape[0])
-    col_biases = np.zeros(data.shape[1])
-
-    for row_index in range(data.shape[0]):
-        row_biases[row_index] = np.sum(data[row_index]) / \
-                np.count_nonzero(data[row_index]) - total_average
-
-    plt.hist(row_biases)
-    plt.show()
-
-    for col_index in range(data.shape[1]):
-        col_biases[col_index] = np.sum(data[:][col_index]) / \
-                np.count_nonzero(data[:][col_index]) - total_average
-
-    plt.hist(col_biases)
-    plt.show()
-
-    counter = 0
-    values = np.zeros(10000000)
-
-    for row_index in range(data.shape[0]):
-        for col_index in range(data.shape[1]):
-            if data[row_index, col_index] == 0:
-                new_value = total_average + \
-                        row_biases[row_index] + col_biases[col_index]
-                data[row_index, col_index] = new_value
-                values[counter] = new_value
-                counter += 1
-    plt.hist(values)
-    plt.show()
-
-    print('filled %d many holes' % counter)
-    return data
-
 def predict_by_svd(data, approximation_rank):
-    imputed_data = predict_by_avg(data, True)
+    imputed_data = utils.predict_by_avg(data, True)
     # imputed_data = predict_bias(data)
     u_embeddings, singular_values, vh_embeddings =\
             np.linalg.svd(imputed_data)
@@ -121,11 +38,6 @@ def predict_by_svd(data, approximation_rank):
     vh_embeddings = vh_embeddings[0:approximation_rank, :]
     return np.dot(u_embeddings,\
             np.dot(np.diag(singular_values), vh_embeddings))
-
-def clip(data):
-    data[data > 5] = 5
-    data[data < 1] = 1
-    return data
 
 def predict_by_sgd(data, approximation_rank, regularization):
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
@@ -195,7 +107,6 @@ def predict_by_sgd(data, approximation_rank, regularization):
     write_sgd_score(rsme, approximation_rank, regularization)
     return reconstruction
 
-
 def get_embeddings(data, embedding_type, embedding_dimension):
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
@@ -250,7 +161,7 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
     y_train = np.asarray(y_train)
     y_train = np.ravel(y_train)
 
-    indices_to_predict = get_indices_to_predict()
+    indices_to_predict = utils.get_indices_to_predict()
     counter = 0
 
     for i, j in indices_to_predict:
@@ -270,14 +181,14 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
 
 def write_nn_predictions(data_matrix, y_predicted):
 
-    indices_to_predict = get_indices_to_predict()
+    indices_to_predict = utils.get_indices_to_predict()
     for a, index in enumerate(indices_to_predict):
         if a < len(y_predicted):
             data_matrix[index] = y_predicted[a]
         else:
             data_matrix[index] = 3
 
-    reconstruction_to_predictions(data_matrix)
+    utils.reconstruction_to_predictions(data_matrix, SUBMISSION_FILE)
 
 
 def predict_by_nn(data_matrix, imputed_data):
@@ -314,21 +225,20 @@ def main_sgd():
     data = utils.ratings_to_matrix(all_ratings)
     # reconstruction = predict_by_svd(data, 10)
     reconstruction = predict_by_sgd(data, k, regularization)
-    reconstruction = clip(reconstruction)
+    reconstruction = utils.clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME: %f' % rsme)
-    reconstruction_to_predictions(reconstruction)
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 
 def main_nn():
     np.random.seed(10)
     all_ratings = utils.load_ratings('../data/data_train.csv')
     data_matrix = utils.ratings_to_matrix(all_ratings)
-    #test_predict_by_avg()
-    imputed_data = predict_by_avg(copy.copy(data_matrix), True)
+    imputed_data = utils.predict_by_avg(copy.copy(data_matrix), True)
     #reconstruction = predict_by_svd(imputed_data, 2)
     #reconstruction = predict_by_sgd(data_matrix, 10)
-    #reconstruction_to_predictions(reconstruction)
+    #utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
     predict_by_nn(data_matrix, imputed_data)
 

@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 #TODO(kkleindev): Find execution-folder-independent approach.
 ROOT_DIR = os.path.dirname(os.path.abspath(''))
@@ -7,6 +8,8 @@ TRAINING_FILE_NAME = os.path.join(ROOT_DIR,\
         'data/trainingIndices.csv')
 VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,\
         'data/validationIndices.csv')
+SAMPLE_SUBMISSION = os.path.join(ROOT_DIR,\
+        'data/sampleSubmission.csv')
 ITEM_COUNT = 1000
 USER_COUNT = 10000
 
@@ -62,6 +65,84 @@ def get_indeces_from_file(file_name):
             i, j = line.split(",")
             indeces.append((int(i), int(j)))
     return indeces
+
+def get_indices_to_predict():
+    """Get list of indices to predict from sample submission file.
+        Returns:
+            indices_to_predict:  list of tuples with indices"""
+    indices_to_predict = []
+    with open(SAMPLE_SUBMISSION, 'r') as file:
+        header = file.readline()
+        for line in file:
+            key, value_string = line.split(",")
+            row_string, col_string = key.split("_")
+            i = int(row_string[1:]) - 1
+            j = int(col_string[1:]) - 1
+            indices_to_predict.append((i, j))
+    return indices_to_predict
+
+def write_ratings(predictions, submission_file):
+    with open(submission_file, 'w') as file:
+        file.write('Id,Prediction\n')
+        for i, j, prediction in predictions:
+            file.write('r%d_c%d,%f\n' % (i, j, prediction))
+
+def reconstruction_to_predictions(reconstruction, submission_file):
+    indices_to_predict = get_indices_to_predict()
+    predictions = list(map(lambda t: \
+            (t[0],t[1], reconstruction[t[0] - 1, t[1] - 1]), \
+            indices_to_predict))
+    write_ratings(predictions, submission_file)
+
+def clip(data):
+    data[data > 5] = 5
+    data[data < 1] = 1
+    return data
+
+
+def predict_by_avg(data, by_row):
+    data = data.T if by_row else data
+    for row in data:
+        empty = (row == 0)
+        row_sum = np.sum(row)
+        row[empty] = row_sum / np.count_nonzero(row)
+    return data.T if by_row else data
+
+def predict_bias(data):
+    total_average = np.mean(data[np.nonzero(data)])
+    row_biases = np.zeros(data.shape[0])
+    col_biases = np.zeros(data.shape[1])
+
+    for row_index in range(data.shape[0]):
+        row_biases[row_index] = np.sum(data[row_index]) / \
+                np.count_nonzero(data[row_index]) - total_average
+
+    plt.hist(row_biases)
+    plt.show()
+
+    for col_index in range(data.shape[1]):
+        col_biases[col_index] = np.sum(data[:][col_index]) / \
+                np.count_nonzero(data[:][col_index]) - total_average
+
+    plt.hist(col_biases)
+    plt.show()
+
+    counter = 0
+    values = np.zeros(10000000)
+
+    for row_index in range(data.shape[0]):
+        for col_index in range(data.shape[1]):
+            if data[row_index, col_index] == 0:
+                new_value = total_average + \
+                        row_biases[row_index] + col_biases[col_index]
+                data[row_index, col_index] = new_value
+                values[counter] = new_value
+                counter += 1
+    plt.hist(values)
+    plt.show()
+
+    print('filled %d many holes' % counter)
+    return data
 
 def compute_rsme(data, prediction):
     validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
