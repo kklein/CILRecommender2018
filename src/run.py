@@ -20,6 +20,7 @@ SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
 SAMPLE_SUBMISSION = os.path.join(utils.ROOT_DIR,\
         'data/sampleSubmission.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased_sgd_scores.csv')
+NN_SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores.csv')
 N_EPOCHS = 5
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.000
@@ -50,6 +51,9 @@ def write_sgd_score(score, k, regularization):
     with open(SCORE_FILE, 'a+') as file:
         file.write('%d, %f, %f\n' % (k, regularization, score))
 
+def write_nn_score(score, embedding_type, embedding_dimensions, architecture, n_training_samples):
+    with open(NN_SCORE_FILE, 'a+') as file:
+        file.write('{0}, {1}, {2}, ,{3}, {4}\n'.format(score, embedding_type, embedding_dimensions, architecture, n_training_samples))
 
 def get_indices_to_predict():
     """Get list of indices to predict from sample submission file.
@@ -232,7 +236,7 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         return w, h.T
 
 
-def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
+def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix, n_training_samples):
     """Concatenates user embeddings and item embeddings, and adds corresponding rating from data matrix.
     Returns: x_train, y_train, x_validate, y_validate."""
 
@@ -248,7 +252,7 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix):
         x_train.append(x)
         y_train.append(y)
         counter += 1
-        if counter > 100000:
+        if counter > n_training_samples:
             break
         elif counter % 1000 == 0:
             pass
@@ -288,22 +292,27 @@ def write_nn_predictions(data_matrix, y_predicted):
     reconstruction_to_predictions(data_matrix)
 
 
-def predict_by_nn(data_matrix, imputed_data):
+def predict_by_nn(data_matrix, imputed_data, nn_configuration):
+
+    embedding_type, embedding_dimensions, architecture, n_training_samples = nn_configuration
 
     # Get embeddings
-    embedding_dimensions = 25
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
-    user_embeddings, item_embeddings = get_embeddings(imputed_data,"nmf" ,embedding_dimensions)
+    user_embeddings, item_embeddings = get_embeddings(imputed_data, embedding_type, embedding_dimensions)
 
-    x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix)
+    x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix, n_training_samples)
     # print(y_train)
-    x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
+    test_size = 0.2
+    x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=test_size)
     print("Number of training examples: {0}".format(len(x_train)))
-    classifier = MLPRegressor((100,50))
+    classifier = MLPRegressor(architecture)
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
-    score = classifier.score(x_test, y_test)
-    print("Score: ", score)
+    y_predicted = classifier.predict(x_test)
+    rmse = np.sqrt(sklearn.metrics.mean_squared_error(y_test, y_predicted))
+    print("RMSE: ", rmse)
+
+    write_nn_score(rmse, embedding_type, embedding_dimensions, architecture, n_training_samples * (1 - test_size))
 
     y_predicted = classifier.predict(x_validate)
     write_nn_predictions(data_matrix, y_predicted)
@@ -338,8 +347,22 @@ def main_nn():
     #reconstruction = predict_by_sgd(data_matrix, 10)
     #reconstruction_to_predictions(reconstruction)
 
-    predict_by_nn(data_matrix, imputed_data)
+    if len(sys.argv) == 1:
+        embedding_type = "nmf"
+        embedding_dimensions = 10
+        architecture = (7,)
+        n_training_samples = 100000
+    else:
+        embedding_type = sys.argv[1]
+        embedding_dimensions = int(sys.argv[2])
+        architecture = eval(sys.argv[3])
+        n_training_samples = int(sys.argv[4])
+        print(architecture)
+
+    nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples)
+
+    predict_by_nn(data_matrix, imputed_data, nn_configuration)
 
 
 if __name__ == '__main__':
-    main_sgd()
+    main_nn()
