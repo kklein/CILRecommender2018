@@ -136,7 +136,7 @@ def clip(data):
     return data
 
 def predict_by_sgd(data, approximation_rank, regularization):
-    observed_indices = utils.get_observed_indeces(data)
+    training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     u_embedding = np.random.rand(data.shape[0], approximation_rank)
     z_embedding = np.random.rand(data.shape[1], approximation_rank)
@@ -145,7 +145,7 @@ def predict_by_sgd(data, approximation_rank, regularization):
     u_counters = np.zeros(data.shape[0])
     z_bias = np.zeros(data.shape[1])
     z_counters = np.zeros(data.shape[1])
-    for k, l in observed_indices:
+    for k, l in training_indices:
         u_bias[k] += data[k][l]
         u_counters[k] += 1
         z_bias[l] += data[k][l]
@@ -155,15 +155,15 @@ def predict_by_sgd(data, approximation_rank, regularization):
     for l in range(data.shape[1]):
         z_bias[l] = (z_bias[l] / z_counters[l]) - total_average
 
-    n_samples = int(0.2 * len(observed_indices))
+    n_samples = int(0.2 * len(training_indices))
     prev_loss = sys.float_info.max
     # rsmes = []
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
 
         for _ in range(n_samples):
-            index = np.random.randint(0, len(observed_indices) - 1)
-            k, l = observed_indices[index]
+            index = np.random.randint(0, len(training_indices) - 1)
+            k, l = training_indices[index]
             residual = data[k, l] - total_average - u_bias[k] - z_bias[l]\
                     - np.dot(u_embedding[k, :], z_embedding[l, :])
             u_update = LEARNING_RATE * (residual * z_embedding[l, :] - \
@@ -220,7 +220,7 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         model = LocallyLinearEmbedding()
         w = model.fit_transform(data)
         h = model.fit_transform(data.T)
-        return w, h 
+        return w, h
     else:
         if embedding_type == "nmf":
             model = NMF(n_components=embedding_dimension, init='random', random_state=0)
