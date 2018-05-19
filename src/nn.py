@@ -36,6 +36,30 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         w = model.fit_transform(data)
         h = model.fit_transform(data.T)
         return w, h
+    elif embedding_type == "ids":
+        uid_dimensions = len(str(data.shape[0])) - 1
+        iid_dimensions = len(str(data.shape[1])) - 1
+        w = np.zeros((data.shape[0], uid_dimensions))
+        h = np.zeros((data.shape[1], iid_dimensions))
+
+        # for i in range(w.shape[0]):
+        #     n = str(i).zfill(uid_dimensions)
+        #     for j in range(len(n)):
+        #         w[i, j] = n[j]
+        #
+        # for i in range(h.shape[0]):
+        #     n = str(i).zfill(iid_dimensions)
+        #     for j in range(len(n)):
+        #         h[i, j] = n[j]
+
+        for i in range(w.shape[0]):
+            w[i] =  i
+
+        for i in range(h.shape[0]):
+            h[i] = i
+
+        return w, h
+
     else:
         if embedding_type == "nmf":
             model = NMF(n_components=embedding_dimension, init='random', random_state=0)
