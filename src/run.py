@@ -53,7 +53,7 @@ def write_sgd_score(score, k, regularization):
 
 def write_nn_score(score, embedding_type, embedding_dimensions, architecture, n_training_samples):
     with open(NN_SCORE_FILE, 'a+') as file:
-        file.write('{0}, {1}, {2}, ,{3}, {4}\n'.format(score, embedding_type, embedding_dimensions, architecture, n_training_samples))
+        file.write('{0}, {1}, {2}, {3}, {4}\n'.format(score, embedding_type, embedding_dimensions, architecture, n_training_samples))
 
 def get_indices_to_predict():
     """Get list of indices to predict from sample submission file.
