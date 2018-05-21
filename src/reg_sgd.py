@@ -21,13 +21,15 @@ def predict_by_sgd(data, approximation_rank, regularization):
     np.random.seed(42)
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
-    u_embedding = np.random.rand(data.shape[0], approximation_rank)
-    z_embedding = np.random.rand(data.shape[1], approximation_rank)
+    u_embedding = np.random.rand(data.shape[0], approximation_rank).astype(
+            np.float128)
+    z_embedding = np.random.rand(data.shape[1], approximation_rank)astype(
+            np.float128)
 
-    u_bias = np.zeros(data.shape[0])
-    u_counters = np.zeros(data.shape[0])
-    z_bias = np.zeros(data.shape[1])
-    z_counters = np.zeros(data.shape[1])
+    u_bias = np.zeros(data.shape[0], dtype=np.float128)
+    u_counters = np.zeros(data.shape[0], dtype=np.float128)
+    z_bias = np.zeros(data.shape[1], dtype=np.float128)
+    z_counters = np.zeros(data.shape[1], dtype=np.float128)
     for k, l in training_indices:
         u_bias[k] += data[k][l]
         u_counters[k] += 1
@@ -95,11 +97,11 @@ def predict_by_sgd(data, approximation_rank, regularization):
 
 def main():
     # k = 10
-    k = int(sys.argv[1])
+    # = int(sys.argv[1])
     # regularization = REGULARIZATION
-    regularization = float(sys.argv[2])
-    # ranks = [5 * i for i in range(1, 40)]
-    # regularizations = [0.001 * i for i in range(10)]
+    #regularization = float(sys.argv[2])
+    ranks = [5 * i for i in range(1, 30)]
+    regularizations = [0.004 * i for i in range(100)]
     # k = np.random.choice(ranks)
     # regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
@@ -108,7 +110,7 @@ def main():
     reconstruction = utils.clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME: %f' % rsme)
-    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()
