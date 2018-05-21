@@ -18,6 +18,7 @@ def write_sgd_score(score, k, regularization):
         file.write('%d, %f, %f\n' % (k, regularization, score))
 
 def predict_by_sgd(data, approximation_rank, regularization):
+    numpy.random.seed(42)
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     u_embedding = np.random.rand(data.shape[0], approximation_rank)
