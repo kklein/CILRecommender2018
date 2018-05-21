@@ -92,7 +92,7 @@ def write_ratings(predictions, submission_file):
 def reconstruction_to_predictions(reconstruction, submission_file):
     indices_to_predict = get_indices_to_predict()
     predictions = list(map(lambda t: \
-            (t[0], t[1], reconstruction[t[0] - 1, t[1] - 1]), \
+            (t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]]), \
             indices_to_predict))
     write_ratings(predictions, submission_file)
 
@@ -100,7 +100,6 @@ def clip(data):
     data[data > 5] = 5
     data[data < 1] = 1
     return data
-
 
 def predict_by_avg(data, by_row):
     data = data.T if by_row else data
