@@ -87,12 +87,12 @@ def write_ratings(predictions, submission_file):
     with open(submission_file, 'w') as file:
         file.write('Id,Prediction\n')
         for i, j, prediction in predictions:
-            file.write('r%d_c%d,%f\n' % (i, j, prediction))
+            file.write('r%d_c%d,%f\n' % (i + 1, j + 1, prediction))
 
 def reconstruction_to_predictions(reconstruction, submission_file):
     indices_to_predict = get_indices_to_predict()
     predictions = list(map(lambda t: \
-            (t[0], t[1], reconstruction[t[0] - 1, t[1] - 1]), \
+            (t[0], t[1], reconstruction[t[0], t[1]]), \
             indices_to_predict))
     write_ratings(predictions, submission_file)
 

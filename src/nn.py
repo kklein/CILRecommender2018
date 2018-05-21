@@ -16,7 +16,7 @@ import utils
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,
                                'data/submission_nn.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_regularization_scores.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_regularization_scores_21.csv')
 
 
 def get_embeddings(data, embedding_type, embedding_dimension):
@@ -104,6 +104,7 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix, n_trainin
         x_validate.append(x)
 
     x_validate = np.asarray(x_validate)
+    print("x_validate", len(x_validate))
 
     return x_train, y_train, x_validate
 
@@ -148,6 +149,7 @@ def predict_by_nn(data_matrix, imputed_data, nn_configuration):
     write_nn_score(rmse, embedding_type, embedding_dimensions, architecture, n_training_samples * (1 - test_size), alpha)
 
     y_predicted = classifier.predict(x_validate)
+    print("ypredicted", len(y_predicted))
     write_nn_predictions(data_matrix, y_predicted)
 
 
