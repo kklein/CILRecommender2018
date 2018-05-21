@@ -18,7 +18,7 @@ def write_sgd_score(score, k, regularization):
         file.write('%d, %f, %f\n' % (k, regularization, score))
 
 def predict_by_sgd(data, approximation_rank, regularization):
-    numpy.random.seed(42)
+    np.random.seed(42)
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     u_embedding = np.random.rand(data.shape[0], approximation_rank)
@@ -34,9 +34,11 @@ def predict_by_sgd(data, approximation_rank, regularization):
         z_bias[l] += data[k][l]
         z_counters[l] += 1
     for k in range(data.shape[0]):
+        # u_bias[k] = ((u_bias[k] + 25 * total_average) / (25 + u_counters[k])) \                - total_average
         u_bias[k] = (u_bias[k] / u_counters[k]) - total_average
     for l in range(data.shape[1]):
         z_bias[l] = (z_bias[l] / z_counters[l]) - total_average
+         # z_bias[l] = ((z_bias[l] + 25 * total_average) / (25 + z_counters[l]))\                - total_average
 
     n_samples = int(0.2 * len(training_indices))
     prev_loss = sys.float_info.max
