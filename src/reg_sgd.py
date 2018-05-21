@@ -34,11 +34,13 @@ def predict_by_sgd(data, approximation_rank, regularization):
         z_bias[l] += data[k][l]
         z_counters[l] += 1
     for k in range(data.shape[0]):
-        # u_bias[k] = ((u_bias[k] + 25 * total_average) / (25 + u_counters[k])) \                - total_average
-        u_bias[k] = (u_bias[k] / u_counters[k]) - total_average
+        u_bias[k] = ((u_bias[k] + 25 * total_average) / (25 + u_counters[k]))\
+                - total_average
+        # u_bias[k] = (u_bias[k] / u_counters[k]) - total_average
     for l in range(data.shape[1]):
-        z_bias[l] = (z_bias[l] / z_counters[l]) - total_average
-         # z_bias[l] = ((z_bias[l] + 25 * total_average) / (25 + z_counters[l]))\                - total_average
+        # z_bias[l] = (z_bias[l] / z_counters[l]) - total_average
+        z_bias[l] = ((z_bias[l] + 25 * total_average) / (25 + z_counters[l]))\
+                - total_average
 
     n_samples = int(0.2 * len(training_indices))
     prev_loss = sys.float_info.max
@@ -93,13 +95,13 @@ def predict_by_sgd(data, approximation_rank, regularization):
 
 def main():
     # k = 10
-    #k = int(sys.argv[1])
+    k = int(sys.argv[1])
     # regularization = REGULARIZATION
-    #regularization = float(sys.argv[2])
-    ranks = [5 * i for i in range(1, 40)]
-    regularizations = [0.001 * i for i in range(10)]
-    k = np.random.choice(ranks)
-    regularization = np.random.choice(regularizations)
+    regularization = float(sys.argv[2])
+    # ranks = [5 * i for i in range(1, 40)]
+    # regularizations = [0.001 * i for i in range(10)]
+    # k = np.random.choice(ranks)
+    # regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     reconstruction = predict_by_sgd(data, k, regularization)
