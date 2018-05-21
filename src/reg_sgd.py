@@ -23,7 +23,7 @@ def predict_by_sgd(data, approximation_rank, regularization):
     total_average = np.mean(data[np.nonzero(data)])
     u_embedding = np.random.rand(data.shape[0], approximation_rank).astype(
             np.float128)
-    z_embedding = np.random.rand(data.shape[1], approximation_rank)astype(
+    z_embedding = np.random.rand(data.shape[1], approximation_rank).astype(
             np.float128)
 
     u_bias = np.zeros(data.shape[0], dtype=np.float128)
@@ -102,8 +102,8 @@ def main():
     #regularization = float(sys.argv[2])
     ranks = [5 * i for i in range(1, 30)]
     regularizations = [0.004 * i for i in range(100)]
-    # k = np.random.choice(ranks)
-    # regularization = np.random.choice(regularizations)
+    k = np.random.choice(ranks)
+    regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     reconstruction = predict_by_sgd(data, k, regularization)
