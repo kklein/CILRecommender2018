@@ -8,7 +8,7 @@ import utils
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased_sgd_scores.csv')
-N_EPOCHS = 5
+N_EPOCHS = 50
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.0001
@@ -64,7 +64,7 @@ def predict_by_sgd(data, approximation_rank, regularization):
             np.float128)
     u_bias, z_bias = get_initialized_biases(data, training_indices)
     total_average = np.mean(data[np.nonzero(data)])
-    rsmes = []
+    # rsmes = []
     for i in range(N_EPOCHS):
         print("Epoch {0}:".format(i))
         shuffle(training_indices)
@@ -88,24 +88,24 @@ def predict_by_sgd(data, approximation_rank, regularization):
         reconstruction = reconstruct(u_embedding, z_embedding, total_average,
                 u_bias, z_bias)
         rsme = utils.compute_rsme(data, reconstruction)
-        rsmes.append((i, rsme))
+        # rsmes.append((i, rsme))
         print('RSME: %f' % rsme)
 
-    x, y = zip(*rsmes)
-    plt.scatter(x, y)
-    plt.show()
+    # x, y = zip(*rsmes)
+    # plt.scatter(x, y)
+    # plt.show()
     write_sgd_score(rsme, approximation_rank, regularization)
     return reconstruction
 
 def main():
     # k = 10
-    k = int(sys.argv[1])
+    # k = int(sys.argv[1])
     # regularization = REGULARIZATION
-    regularization = float(sys.argv[2])
-    # ranks = [5 * i for i in range(1, 30)]
-    # regularizations = [0.004 * i for i in range(100)]
-    # k = np.random.choice(ranks)
-    # regularization = np.random.choice(regularizations)
+    # regularization = float(sys.argv[2])
+    ranks = [5 * i for i in range(1, 30)]
+    regularizations = [0.004 * i for i in range(100)]
+    k = np.random.choice(ranks)
+    regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     reconstruction = predict_by_sgd(data, k, regularization)
