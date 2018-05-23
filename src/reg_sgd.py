@@ -8,7 +8,7 @@ import utils
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased_sgd_scores.csv')
-N_EPOCHS = 50
+N_EPOCHS = 15
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.0001
@@ -102,14 +102,14 @@ def main():
     # k = int(sys.argv[1])
     # regularization = REGULARIZATION
     # regularization = float(sys.argv[2])
-    ranks = [5 * i for i in range(1, 30)]
-    regularizations = [0.004 * i for i in range(100)]
+    ranks = [i for i in range(3, 35)]
+    regularizations = [0.0005 * i for i in range(40)]
     k = np.random.choice(ranks)
     regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     reconstruction = predict_by_sgd(data, k, regularization)
-    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()
