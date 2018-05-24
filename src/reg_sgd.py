@@ -18,7 +18,7 @@ def safe_norm(x):
     xmax = np.max(x)
     if xmax != 0:
         return np.linalg.norm(x / xmax) * xmax
-    else
+    else:
         return np.linalg.norm(x)
 
 def write_sgd_score(score, k, regularization):
