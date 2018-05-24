@@ -16,7 +16,10 @@ EPSILON = 0.0001
 # https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
 def safe_norm(x):
     xmax = np.max(x)
-    return np.linalg.norm(x / xmax) * xmax
+    if xmax != 0:
+        return np.linalg.norm(x / xmax) * xmax
+    else
+        return np.linalg.norm(x)
 
 def write_sgd_score(score, k, regularization):
     with open(SCORE_FILE, 'a+') as file:
