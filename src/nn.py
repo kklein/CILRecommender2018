@@ -16,7 +16,7 @@ import utils
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,
                                'data/submission_nn.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_regularization_scores_21.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores_27.csv')
 
 
 def get_embeddings(data, embedding_type, embedding_dimension):
@@ -139,7 +139,7 @@ def predict_by_nn(data_matrix, imputed_data, nn_configuration):
     test_size = 0.2
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=test_size)
     print("Number of training examples: {0}".format(len(x_train)))
-    classifier = MLPRegressor(architecture, alpha=alpha)
+    classifier = MLPRegressor(architecture, alpha=alpha, warm_start=True)
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
     y_predicted = classifier.predict(x_test)
@@ -174,8 +174,8 @@ def main():
 
     nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples, alpha)
 
+    predict_by_nn(imputed_data, imputed_data, nn_configuration)
     predict_by_nn(data_matrix, imputed_data, nn_configuration)
-
 
 if __name__ == '__main__':
     main()
