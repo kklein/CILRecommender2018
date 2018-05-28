@@ -124,15 +124,15 @@ def predict_bias(data):
         row_biases[row_index] = np.sum(data[row_index]) / \
                 np.count_nonzero(data[row_index]) - total_average
 
-    plt.hist(row_biases)
-    plt.show()
+    # plt.hist(row_biases)
+    # plt.show()
 
     for col_index in range(data.shape[1]):
         col_biases[col_index] = np.sum(data[:][col_index]) / \
                 np.count_nonzero(data[:][col_index]) - total_average
 
-    plt.hist(col_biases)
-    plt.show()
+    # plt.hist(col_biases)
+    # plt.show()
 
     counter = 0
     values = np.zeros(10000000)
@@ -145,10 +145,8 @@ def predict_bias(data):
                 data[row_index, col_index] = new_value
                 values[counter] = new_value
                 counter += 1
-    plt.hist(values)
-    plt.show()
-
-    print('filled %d many holes' % counter)
+    # plt.hist(values)
+    # plt.show()
     return data
 
 def compute_rsme(data, prediction):
