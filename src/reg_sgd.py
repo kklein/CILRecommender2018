@@ -88,16 +88,15 @@ def predict_by_sgd(data, approximation_rank, regularization):
             z_embedding[l, :] += z_update
             u_bias[k] += u_bias_update
             z_bias[l] += z_bias_update
-        reconstruction = reconstruct(u_embedding, z_embedding, total_average,
-                u_bias, z_bias)
-        rsme = utils.compute_rsme(data, reconstruction)
+        # reconstruction = reconstruct(u_embedding, z_embedding, total_average,
+                # u_bias, z_bias)
+        # rsme = utils.compute_rsme(data, reconstruction)
         # rsmes.append((i, rsme))
-        print('RSME: %f' % rsme)
+        # print('RSME: %f' % rsme)
 
     # x, y = zip(*rsmes)
     # plt.scatter(x, y)
     # plt.show()
-    write_sgd_score(rsme, approximation_rank, regularization)
     return reconstruction
 
 def main():
@@ -111,8 +110,10 @@ def main():
     regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
-    data = utils.mask_validation(data)
-    reconstruction = predict_by_sgd(data, k, regularization)
+    masked_data = utils.mask_validation(data)
+    reconstruction = predict_by_sgd(masked_data, k, regularization)
+    rsme = utils.compute_rsme(data, reconstruction)
+    write_sgd_score(rsme, approximation_rank, regularization)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
