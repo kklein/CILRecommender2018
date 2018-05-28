@@ -39,10 +39,11 @@ def load_ratings():
     return ratings
 
 def mask_validation(data):
+    masked_data = np.copy(data)
     validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     for row_index, col_index in validation_indices:
-        data[row_index][col_index] = 0
-    return data
+        masked_data[row_index][col_index] = 0
+    return masked_data
 
 def ratings_to_matrix(ratings):
     """Converts a list of ratings to a numpy matrix."""
