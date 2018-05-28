@@ -8,7 +8,7 @@ import utils
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased_sgd_scores.csv')
-N_EPOCHS = 15
+N_EPOCHS = 1
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.0001
@@ -113,7 +113,7 @@ def main():
     masked_data = utils.mask_validation(data)
     reconstruction = predict_by_sgd(masked_data, k, regularization)
     rsme = utils.compute_rsme(data, reconstruction)
-    write_sgd_score(rsme, approximation_rank, regularization)
+    write_sgd_score(rsme, k, regularization)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
