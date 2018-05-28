@@ -100,7 +100,7 @@ def predict_by_sgd(data, approximation_rank, regularization):
     # x, y = zip(*rsmes)
     # plt.scatter(x, y)
     # plt.show()
-    return reconstruction
+    return reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias)
 
 def main():
     # k = 10
