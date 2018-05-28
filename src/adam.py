@@ -161,6 +161,7 @@ def main():
     # regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
+    data = utils.mask_validation(data)
     reconstruction = predict_by_sgd(data, k, regularization)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 

@@ -1,5 +1,6 @@
 import os
 import random
+import math
 import numpy as np
 import utils
 
@@ -36,6 +37,7 @@ def main():
     take_bias = random.choice([True, False])
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
+    data = utils.mask_validation(data)
     reconstruction = predict_by_svd(data, k, take_bias)
     reconstruction = utils.clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)

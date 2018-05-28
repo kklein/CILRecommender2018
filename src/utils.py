@@ -32,12 +32,17 @@ def load_ratings():
             row_string, col_string = key.split("_")
             row = int(row_string[1:])
             col = int(col_string[1:])
-
             if rating < 1 or rating > 5:
                 raise ValueError("Found illegal rating value [%d]." % rating)
 
             ratings.append((row - 1, col - 1, rating))
     return ratings
+
+def mask_validation(data):
+    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    for row_index, col_index in validation_indices:
+        data[row_index][col_index] = 0
+    return data
 
 def ratings_to_matrix(ratings):
     """Converts a list of ratings to a numpy matrix."""
