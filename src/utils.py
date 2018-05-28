@@ -50,6 +50,12 @@ def ratings_to_matrix(ratings):
     print("Finished building rating matrix.")
     return matrix
 
+def impute(data, reconstruction):
+    observed_indeces = get_observed_indeces(data)
+    for row_index, col_index in observed_indeces:
+        reconstruction[row_index][col_index] = data[row_index][col_index]
+    return reconstruction
+
 def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
     return list(zip(row_indices, col_indices))
