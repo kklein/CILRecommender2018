@@ -6,8 +6,8 @@ import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_svd.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd_15_scores.csv')
-N_EPOCHS = 1
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd_scores.csv')
+N_EPOCHS = 15
 
 def write_svd_score(score, k, take_bias):
     with open(SCORE_FILE, 'a+') as file:
@@ -32,7 +32,7 @@ def predict_by_svd(data, approximation_rank, take_bias):
     return reconstruction
 
 def main():
-    ranks = [i for i in range(3, 35)]
+    ranks = [i for i in range(3, 30)]
     k = np.random.choice(ranks)
     take_bias = random.choice([True, False])
     all_ratings = utils.load_ratings()

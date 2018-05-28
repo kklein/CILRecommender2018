@@ -105,8 +105,8 @@ def main():
     # k = int(sys.argv[1])
     # regularization = REGULARIZATION
     # regularization = float(sys.argv[2])
-    ranks = [i for i in range(3, 35)]
-    regularizations = [0.0005 * i for i in range(40)]
+    ranks = [i for i in range(3, 100)]
+    regularizations = [0.0005 * i for i in range(400)]
     k = np.random.choice(ranks)
     regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()

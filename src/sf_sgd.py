@@ -105,13 +105,13 @@ def predict_by_sgd(data, approximation_rank, regularization):
 
 def main():
     # k = 10
-    k = int(sys.argv[1])
+    # k = int(sys.argv[1])
     # regularization = REGULARIZATION
-    regularization = float(sys.argv[2])
-    # ranks = [i for i in range(3, 50)]
-    # regularizations = [0.0005 * i for i in range(40)]
-    # k = np.random.choice(ranks)
-    # regularization = np.random.choice(regularizations)
+    # regularization = float(sys.argv[2])
+    ranks = [i for i in range(3, 100)]
+    regularizations = [0.0005 * i for i in range(400)]
+    k = np.random.choice(ranks)
+    regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     data = utils.mask_validation(data)
