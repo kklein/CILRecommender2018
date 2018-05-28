@@ -7,8 +7,8 @@ import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sf_sgd.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/sf_sgd_scores.csv')
-N_EPOCHS = 1
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/sf15_sgd_scores.csv')
+N_EPOCHS = 15
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.0001
