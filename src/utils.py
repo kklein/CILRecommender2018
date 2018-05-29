@@ -32,12 +32,18 @@ def load_ratings():
             row_string, col_string = key.split("_")
             row = int(row_string[1:])
             col = int(col_string[1:])
-
             if rating < 1 or rating > 5:
                 raise ValueError("Found illegal rating value [%d]." % rating)
 
             ratings.append((row - 1, col - 1, rating))
     return ratings
+
+def mask_validation(data):
+    masked_data = np.copy(data)
+    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    for row_index, col_index in validation_indices:
+        masked_data[row_index][col_index] = 0
+    return masked_data
 
 def ratings_to_matrix(ratings):
     """Converts a list of ratings to a numpy matrix."""
@@ -49,6 +55,12 @@ def ratings_to_matrix(ratings):
         matrix[row, col] = rating
     print("Finished building rating matrix.")
     return matrix
+
+def impute(data, reconstruction):
+    observed_indeces = get_observed_indeces(data)
+    for row_index, col_index in observed_indeces:
+        reconstruction[row_index][col_index] = data[row_index][col_index]
+    return reconstruction
 
 def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
@@ -87,12 +99,12 @@ def write_ratings(predictions, submission_file):
     with open(submission_file, 'w') as file:
         file.write('Id,Prediction\n')
         for i, j, prediction in predictions:
-            file.write('r%d_c%d,%f\n' % (i + 1, j + 1, prediction))
+            file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
 def reconstruction_to_predictions(reconstruction, submission_file):
     indices_to_predict = get_indices_to_predict()
     predictions = list(map(lambda t: \
-            (t[0], t[1], reconstruction[t[0], t[1]]), \
+            (t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]]), \
             indices_to_predict))
     write_ratings(predictions, submission_file)
 
@@ -100,7 +112,6 @@ def clip(data):
     data[data > 5] = 5
     data[data < 1] = 1
     return data
-
 
 def predict_by_avg(data, by_row):
     data = data.T if by_row else data
@@ -119,15 +130,15 @@ def predict_bias(data):
         row_biases[row_index] = np.sum(data[row_index]) / \
                 np.count_nonzero(data[row_index]) - total_average
 
-    plt.hist(row_biases)
-    plt.show()
+    # plt.hist(row_biases)
+    # plt.show()
 
     for col_index in range(data.shape[1]):
         col_biases[col_index] = np.sum(data[:][col_index]) / \
                 np.count_nonzero(data[:][col_index]) - total_average
 
-    plt.hist(col_biases)
-    plt.show()
+    # plt.hist(col_biases)
+    # plt.show()
 
     counter = 0
     values = np.zeros(10000000)
@@ -140,10 +151,8 @@ def predict_bias(data):
                 data[row_index, col_index] = new_value
                 values[counter] = new_value
                 counter += 1
-    plt.hist(values)
-    plt.show()
-
-    print('filled %d many holes' % counter)
+    # plt.hist(values)
+    # plt.show()
     return data
 
 def compute_rsme(data, prediction):

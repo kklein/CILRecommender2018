@@ -5,6 +5,8 @@ module load python/3.6.0
 #do
   for ((k = 1; k <=200; k += 1))
   do
-    bsub "python reg_sgd.py"
+    bsub "python reg_sgd.py";
+    bsub "python sf_sgd.py";
+    bsub "python svd.py";
   done
 #done

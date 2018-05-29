@@ -3,10 +3,7 @@ import pandas as pd
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('biased_sgd_scores.csv', header=None,
-        dtype=np.float64)
-
-# df = df.sort_values(by=0)
+df = pd.read_csv('biased_sgd_scores.csv', header=None, dtype=np.float64)
 
 fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)
@@ -19,6 +16,11 @@ ax.grid(True,linestyle='-',color='0.75')
 ax.scatter(df[0],df[1],s=20,c=df[2], marker='o', cmap=cm.jet)
 
 plt.show()
+
+min_index = df[2].idxmin()
+
+print("%d, %f: %f" % (df[0][min_index], df[1][min_index], df[2][min_index]))
+
 
 # plot_colourline(df[0], df[2], df[1])
 # plt.show()

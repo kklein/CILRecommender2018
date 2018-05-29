@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/submission_sgd.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased15_sgd_scores.csv')
+        'data/submission_sf_sgd.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/sf15_sgd_scores.csv')
 N_EPOCHS = 15
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
@@ -67,32 +67,35 @@ def predict_by_sgd(data, approximation_rank, regularization):
             np.float128)
     u_bias, z_bias = get_initialized_biases(data, training_indices)
     total_average = np.mean(data[np.nonzero(data)])
-    # rsmes = []
-    for i in range(N_EPOCHS):
-        print("Epoch {0}:".format(i))
-        shuffle(training_indices)
-        for k, l in training_indices:
-            residual = data[k, l] - total_average - u_bias[k] - z_bias[l]\
-                    - np.dot(u_embedding[k, :], z_embedding[l, :])
-            u_update = LEARNING_RATE * residual * z_embedding[l, :] - \
-                    safe_norm(LEARNING_RATE * regularization * \
-                    u_embedding[k, :])
-            z_update = LEARNING_RATE * residual * u_embedding[k, :] - \
-                    safe_norm(LEARNING_RATE * regularization * \
-                    z_embedding[l, :])
-            u_bias_update = LEARNING_RATE * (residual - regularization *
-                    np.absolute(u_bias[k]))
-            z_bias_update = LEARNING_RATE * (residual - regularization *
-                    np.absolute(z_bias[l]))
-            u_embedding[k, :] += u_update
-            z_embedding[l, :] += z_update
-            u_bias[k] += u_bias_update
-            z_bias[l] += z_bias_update
-        # reconstruction = reconstruct(u_embedding, z_embedding, total_average,
-                # u_bias, z_bias)
-        # rsme = utils.compute_rsme(data, reconstruction)
-        # rsmes.append((i, rsme))
-        # print('RSME: %f' % rsme)
+
+    for feature_index in range(approximation_rank):
+        print("Feature %d." % feature_index)
+        # rsmes = []
+        for i in range(N_EPOCHS):
+            print("Epoch {0}:".format(i))
+            shuffle(training_indices)
+            for k, l in training_indices:
+                residual = data[k, l] - total_average - u_bias[k] - z_bias[l]\
+                        - np.dot(u_embedding[k, :feature_index + 1], z_embedding[l, :feature_index + 1])
+                u_update = LEARNING_RATE * residual * z_embedding[l, feature_index] - \
+                        safe_norm(LEARNING_RATE * regularization * \
+                        u_embedding[k, feature_index])
+                z_update = LEARNING_RATE * residual * u_embedding[k, feature_index] - \
+                        safe_norm(LEARNING_RATE * regularization * \
+                        z_embedding[l, feature_index])
+                u_bias_update = LEARNING_RATE * (residual - regularization *
+                        np.absolute(u_bias[k]))
+                z_bias_update = LEARNING_RATE * (residual - regularization *
+                        np.absolute(z_bias[l]))
+                u_embedding[k, feature_index] += u_update
+                z_embedding[l, feature_index] += z_update
+                u_bias[k] += u_bias_update
+                z_bias[l] += z_bias_update
+            # reconstruction = reconstruct(u_embedding[:, :feature_index + 1], z_embedding[:, :feature_index + 1], total_average,
+                    # u_bias, z_bias)
+            # rsme = utils.compute_rsme(data, reconstruction)
+            # rsmes.append((i, rsme))
+            # print('RSME: %f' % rsme)
 
     # x, y = zip(*rsmes)
     # plt.scatter(x, y)
