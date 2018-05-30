@@ -16,9 +16,7 @@ import utils
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,
                                'data/submission_nn.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores.csv')
-
-NN_SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_ensemble_scores_27.csv')
 
 
 def get_embeddings(data, embedding_type, embedding_dimension):
@@ -38,6 +36,30 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         w = model.fit_transform(data)
         h = model.fit_transform(data.T)
         return w, h
+    elif embedding_type == "ids":
+        uid_dimensions = len(str(data.shape[0])) - 1
+        iid_dimensions = len(str(data.shape[1])) - 1
+        w = np.zeros((data.shape[0], uid_dimensions))
+        h = np.zeros((data.shape[1], iid_dimensions))
+
+        # for i in range(w.shape[0]):
+        #     n = str(i).zfill(uid_dimensions)
+        #     for j in range(len(n)):
+        #         w[i, j] = n[j]
+        #
+        # for i in range(h.shape[0]):
+        #     n = str(i).zfill(iid_dimensions)
+        #     for j in range(len(n)):
+        #         h[i, j] = n[j]
+
+        for i in range(w.shape[0]):
+            w[i] =  i
+
+        for i in range(h.shape[0]):
+            h[i] = i
+
+        return w, h
+
     else:
         if embedding_type == "nmf":
             model = NMF(n_components=embedding_dimension, init='random', random_state=0)
@@ -82,6 +104,7 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix, n_trainin
         x_validate.append(x)
 
     x_validate = np.asarray(x_validate)
+    print("x_validate", len(x_validate))
 
     return x_train, y_train, x_validate
 
@@ -97,14 +120,14 @@ def write_nn_predictions(data_matrix, y_predicted):
     utils.reconstruction_to_predictions(data_matrix, SUBMISSION_FILE)
 
 
-def write_nn_score(score, embedding_type, embedding_dimensions, architecture, n_training_samples):
-    with open(NN_SCORE_FILE, 'a+') as file:
-        file.write('{0}, {1}, {2}, {3}, {4}\n'.format(score, embedding_type, embedding_dimensions, architecture,
-                                                      n_training_samples))
+def write_nn_score(score, embedding_type, embedding_dimensions, architecture, n_training_samples, alpha):
+    with open(SCORE_FILE, 'a+') as file:
+        file.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(score, embedding_type, embedding_dimensions, architecture,
+                                                      n_training_samples, alpha))
 
 
-def predict_by_nn(data_matrix, imputed_data, nn_configuration):
-    embedding_type, embedding_dimensions, architecture, n_training_samples = nn_configuration
+def predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier):
+    embedding_type, embedding_dimensions, architecture, n_training_samples, alpha = nn_configuration
 
     # Get embeddings
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
@@ -116,18 +139,19 @@ def predict_by_nn(data_matrix, imputed_data, nn_configuration):
     test_size = 0.2
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=test_size)
     print("Number of training examples: {0}".format(len(x_train)))
-    classifier = MLPRegressor(architecture)
+    # classifier = MLPRegressor(architecture, alpha=alpha, warm_start=False)
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
     y_predicted = classifier.predict(x_test)
     rmse = np.sqrt(mean_squared_error(y_test, y_predicted))
     print("RMSE: ", rmse)
 
-    write_nn_score(rmse, embedding_type, embedding_dimensions, architecture, n_training_samples * (1 - test_size))
+    write_nn_score(rmse, embedding_type, embedding_dimensions, architecture, n_training_samples * (1 - test_size), alpha)
 
     y_predicted = classifier.predict(x_validate)
-    write_nn_predictions(data_matrix, y_predicted)
-
+    print("ypredicted", len(y_predicted))
+    # write_nn_predictions(data_matrix, y_predicted)
+    return y_predicted
 
 def main():
     np.random.seed(10)
@@ -145,11 +169,24 @@ def main():
         embedding_dimensions = int(sys.argv[2])
         architecture = eval(sys.argv[3])
         n_training_samples = int(sys.argv[4])
+        alpha = float(sys.argv[5])
         print(architecture)
 
-    nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples)
-
-    predict_by_nn(data_matrix, imputed_data, nn_configuration)
+    if False:
+        nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples, alpha)
+        classifier =  MLPRegressor(architecture, alpha=alpha, warm_start=True)
+        predict_by_nn(imputed_data, imputed_data, nn_configuration, classifier)
+        prediction = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        write_nn_predictions(data_matrix, prediction)
+    if True:
+        nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples, alpha)
+        classifier =  MLPRegressor(architecture, alpha=alpha)
+        prediction_1 = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        nn_configuration = ("nmf", embedding_dimensions, architecture, n_training_samples, alpha)
+        classifier =  MLPRegressor(architecture, alpha=alpha)
+        prediction_2 = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        prediction = np.mean([prediction_1, prediction_2], axis=1)
+        write_nn_predictions(data_matrix, prediction) 
 
 
 if __name__ == '__main__':

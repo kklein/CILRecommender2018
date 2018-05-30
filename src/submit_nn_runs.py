@@ -1,7 +1,7 @@
 import subprocess
 
-# subprocess.Popen("bsub -R \"rusage[mem=4000]\" python run.py nmf 10 \"(7,)\" 1000000")
 for embedding_dimensions in range(10,200,10):
-    hidden_layer_width = int(embedding_dimensions / 2)
-    args = ["bsub", "-R", "rusage[mem=4000]", "python", "run.py", "nmf", str(embedding_dimensions), "("+str(hidden_layer_width)+",)", "1000000"]
-    subprocess.Popen(args)
+    for alpha in [0.0001, 0.001, 0.01]:
+        hidden_layer_width = int(embedding_dimensions / 2)
+        args = ["bsub", "-R", "rusage[mem=6000]", "python", "nn.py", "svd", str(embedding_dimensions), "("+str(hidden_layer_width)+",)", "1000000", str(alpha)]
+        subprocess.Popen(args)

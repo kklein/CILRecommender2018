@@ -1,0 +1,3 @@
+[submodule "neural_collaborative_filtering"]
+	path = neural_collaborative_filtering
+	url = https://github.com/heylook/neural_collaborative_filtering
