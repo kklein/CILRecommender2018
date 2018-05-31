@@ -15,18 +15,22 @@ def write_svd_score(score, k, take_bias):
 def get_embeddings(imputed_data, approximation_rank):
     u_embeddings, singular_values, z_embeddings =\
             np.linalg.svd(imputed_data)
-    u_embeddings = np.dot(u_embeddings, np.sqrt(singular_values))
-    z_embeddings = np.dot(z_embeddings, np.sqrt(singular_values))
     u_embeddings = u_embeddings[:, 0:approximation_rank]
     z_embeddings = z_embeddings[0:approximation_rank, :]
+    singular_values = singular_values[:approximation_rank]
+    s = np.zeros((approximation_rank, approximation_rank))
+    np.fill_diagonal(s, np.sqrt(singular_values))
+    u_embeddings = np.matmul(u_embeddings, s)
+    z_embeddings = np.matmul(s, z_embeddings)
+    z_embedding = z_embeddings.T
     return u_embeddings, z_embeddings
 
 def predict_by_svd(data, imputed_data, approximation_rank,):
     reconstruction = imputed_data
     for epoch_index in range(N_EPOCHS):
         u_embeddings, z_embeddings =\
-                get_embeddings(data, imputed_data, approximation_rank)
-        reconstruction = np.dot(u_embeddings, z_embeddings)
+                get_embeddings(imputed_data, approximation_rank)
+        reconstruction = np.matmul(u_embeddings, z_embeddings)
         if epoch_index < N_EPOCHS - 1:
             reconstruction = utils.impute(data, reconstruction)
     return reconstruction
@@ -42,7 +46,7 @@ def main():
         imputed_data = utils.predict_bias(data)
     else:
         imputed_data = utils.predict_by_avg(data, True)
-    reconstruction = predict_by_svd(masked_data, imputed_data, k, take_bias)
+    reconstruction = predict_by_svd(masked_data, imputed_data, k)
     reconstruction = utils.clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME: %f' % rsme)
