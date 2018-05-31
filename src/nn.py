@@ -79,9 +79,17 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix, n_trainin
     y_train = []
 
     x_validate = []
+    y_validate = []
+
+    x_test = []
 
     counter = 0
-    for i, j in zip(*np.nonzero(data_matrix)):
+    validation_indices = utils.get_validation_indices()
+    observed_indices = zip(*np.nonzero(data_matrix))
+    #train_indices = list(filter(lambda x: x not in validation_indices, observed_indices))
+    train_indices = list(set(observed_indices).difference(set(validation_indices)))
+
+    for i, j in train_indices:
         x = np.concatenate([user_embeddings[i], item_embeddings[j]])
         y = data_matrix[i, j]
         x_train.append(x)
@@ -90,23 +98,33 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix, n_trainin
         if counter > n_training_samples:
             break
         elif counter % 1000 == 0:
+            #print(counter)
             pass
-            # print(counter)
+
+    for i, j in validation_indices:
+        x = np.concatenate([user_embeddings[i], item_embeddings[j]])
+        y = data_matrix[i, j]
+        x_validate.append(x)
+        y_validate.append(y)
 
     x_train = np.asarray(x_train)
     y_train = np.asarray(y_train)
     y_train = np.ravel(y_train)
 
+    x_validate = np.asarray(x_validate)
+    y_validate = np.asarray(y_validate)
+    y_validate = np.ravel(y_validate)
+
     indices_to_predict = utils.get_indices_to_predict()
 
     for i, j in indices_to_predict:
         x = np.concatenate([user_embeddings[i], item_embeddings[j]])
-        x_validate.append(x)
+        x_test.append(x)
 
-    x_validate = np.asarray(x_validate)
-    print("x_validate", len(x_validate))
+    x_test = np.asarray(x_test)
+    print("x_test", len(x_test))
 
-    return x_train, y_train, x_validate
+    return x_train, y_train, x_validate, y_validate, x_test
 
 
 def write_nn_predictions(data_matrix, y_predicted):
@@ -133,31 +151,33 @@ def predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier):
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
     user_embeddings, item_embeddings = get_embeddings(imputed_data, embedding_type, embedding_dimensions)
 
-    x_train, y_train, x_validate = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix,
+    x_train, y_train, x_validate, y_validate, x_test = prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix,
                                                        n_training_samples)
+
     # print(y_train)
-    test_size = 0.2
-    x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=test_size)
+    #test_size = 0.2
+    #x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=test_size)
     print("Number of training examples: {0}".format(len(x_train)))
     # classifier = MLPRegressor(architecture, alpha=alpha, warm_start=False)
     print("Classifier parameters {0}".format(classifier.get_params()))
     classifier.fit(x_train, y_train)
-    y_predicted = classifier.predict(x_test)
-    rmse = np.sqrt(mean_squared_error(y_test, y_predicted))
+    y_validate_hat = classifier.predict(x_validate)
+    rmse = np.sqrt(mean_squared_error(y_validate, y_validate_hat))
     print("RMSE: ", rmse)
 
-    write_nn_score(rmse, embedding_type, embedding_dimensions, architecture, n_training_samples * (1 - test_size), alpha)
+    write_nn_score(rmse, embedding_type, embedding_dimensions, architecture, len(x_train), alpha)
 
-    y_predicted = classifier.predict(x_validate)
+    y_predicted = classifier.predict(x_test)
     print("ypredicted", len(y_predicted))
     # write_nn_predictions(data_matrix, y_predicted)
-    return y_predicted, y_test
+    return y_predicted
 
 def main():
     np.random.seed(10)
     all_ratings = utils.load_ratings()
     data_matrix = utils.ratings_to_matrix(all_ratings)
-    imputed_data = utils.predict_by_avg(copy.copy(data_matrix), True)
+    masked_data_matrix = utils.mask_validation(data_matrix)
+    imputed_data = utils.predict_by_avg(copy.copy(masked_data_matrix), True)
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"
@@ -183,12 +203,12 @@ def main():
         architecture = (5,)
         nn_configuration = ("svd",10, architecture, n_training_samples, alpha)
         classifier =  MLPRegressor(architecture, alpha=alpha)
-        prediction_1, _ = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        prediction_1 = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
         print(prediction_1[:100])
         architecture = (50,)
         nn_configuration = ("nmf", 100, architecture, n_training_samples, alpha)
         classifier =  MLPRegressor(architecture, alpha=alpha)
-        prediction_2, y_test = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        prediction_2 = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
         prediction = np.mean([prediction_1, prediction_2], axis=0)
         print(prediction_2[:100])
         print(prediction[:100])
