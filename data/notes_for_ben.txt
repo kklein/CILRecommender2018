@@ -1,0 +1,19 @@
+Das File nn_submission_svd_10d.csv wurde generiert von:
+
+Getting embeddings of dimension: 10
+Getting embeddings using svd
+x_validate 1176952
+Number of training examples: 800000
+Classifier parameters {'activation': 'relu', 'alpha': 0.0001, 'batch_size': 'auto', 'beta_1': 0.9, 'beta_2': 0.999, 'early_stopping': False, 'epsilon': 1e-08, 'hidden_layer_sizes': (7,), 'learning_rate': 'constant', 'learning_rate_init': 0.001, 'max_iter': 200, 'momentum': 0.9, 'nesterovs_momentum': True, 'power_t': 0.5, 'random_state': None, 'shuffle': True, 'solver': 'adam', 'tol': 0.0001, 'validation_fraction': 0.1, 'verbose': False, 'warm_start': False}
+RMSE:  1.0045850198392152
+
+Das File submission_nn_svd_100d.csv wurde generiert von:
+
+Getting embeddings of dimension: 100
+Getting embeddings using svd
+x_validate 1176952
+Number of training examples: 800000
+Classifier parameters {'activation': 'relu', 'alpha': 0.0001, 'batch_size': 'auto', 'beta_1': 0.9, 'beta_2': 0.999, 'early_stopping': False, 'epsilon': 1e-08, 'hidden_layer_sizes': (50,), 'learning_rate': 'constant', 'learning_rate_init': 0.001, 'max_iter': 200, 'momentum': 0.9, 'nesterovs_momentum': True, 'power_t': 0.5, 'random_state': None, 'shuffle': True, 'solver': 'adam', 'tol': 0.0001, 'validation_fraction': 0.1, 'verbose': False, 'warm_start': False}
+RMSE:  0.8755486046531885
+
+Wobei der RMSE dem Resultat auf dem Test-Set entspricht. 
