@@ -16,7 +16,7 @@ import utils
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,
                                'data/submission_nn.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_ensemble_scores_27.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores_31.csv')
 
 
 def get_embeddings(data, embedding_type, embedding_dimension):
@@ -177,7 +177,10 @@ def main():
     all_ratings = utils.load_ratings()
     data_matrix = utils.ratings_to_matrix(all_ratings)
     masked_data_matrix = utils.mask_validation(data_matrix)
-    imputed_data = utils.predict_by_avg(copy.copy(masked_data_matrix), True)
+    # imputed_data = utils.do_smart_init(copy.copy(masked_data_matrix))
+    # imputed_data = utils.predict_by_avg(copy.copy(masked_data_matrix), True)
+    imputed_data = utils.novel_init(copy.copy(masked_data_matrix))
+    print(imputed_data[:10])
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"
@@ -192,14 +195,14 @@ def main():
         alpha = float(sys.argv[5])
         print(architecture)
 
-    if False:
+    if True:
         nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples, alpha)
-        classifier =  MLPRegressor(architecture, alpha=alpha, warm_start=True)
-        predict_by_nn(imputed_data, imputed_data, nn_configuration, classifier)
+        classifier =  MLPRegressor(architecture, alpha=alpha, warm_start=False)
+        #predict_by_nn(imputed_data, imputed_data, nn_configuration, classifier)
         prediction = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
 
-    if True:
+    if False:
         architecture = (5,)
         nn_configuration = ("svd",10, architecture, n_training_samples, alpha)
         classifier =  MLPRegressor(architecture, alpha=alpha)
