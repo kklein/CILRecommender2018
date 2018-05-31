@@ -14,13 +14,15 @@ SAMPLE_SUBMISSION = os.path.join(ROOT_DIR,\
 ITEM_COUNT = 1000
 USER_COUNT = 10000
 
-def load_ratings():
-    """Loads the rating data from the specified file.
-    Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
-    Assumes the file has a header (which is ignored), and that the ratings are
-    then specified as 'rXXX_cXXX,X', where the 'X' blanks specify the row, the
-    column, and then the actual (integer) rating.
-    """
+# https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
+def safe_norm(x):
+    xmax = np.max(x)
+    if xmax != 0:
+        return np.linalg.norm(x / xmax) * xmax
+    else:
+        return np.linalg.norm(x)
+
+def load_ratings(data_file=DATA_FILE):
     data_file = DATA_FILE
     ratings = []
     with open(data_file, 'r') as file:
@@ -32,9 +34,6 @@ def load_ratings():
             row_string, col_string = key.split("_")
             row = int(row_string[1:])
             col = int(col_string[1:])
-            if rating < 1 or rating > 5:
-                raise ValueError("Found illegal rating value [%d]." % rating)
-
             ratings.append((row - 1, col - 1, rating))
     return ratings
 
