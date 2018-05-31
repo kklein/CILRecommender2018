@@ -23,14 +23,13 @@ def safe_norm(x):
         return np.linalg.norm(x)
 
 def load_ratings(data_file=DATA_FILE):
-    data_file = DATA_FILE
     ratings = []
     with open(data_file, 'r') as file:
         # Read header.
         _ = file.readline()
         for line in file:
             key, value_string = line.split(",")
-            rating = int(value_string)
+            rating = float(value_string)
             row_string, col_string = key.split("_")
             row = int(row_string[1:])
             col = int(col_string[1:])
