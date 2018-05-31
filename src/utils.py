@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
-TRAINING_FILE_NAME = os.path.join(ROOT_DIR,\
-        'data/trainingIndices.csv')
-VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,\
-        'data/validationIndices.csv')
+TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
+            'data/trainingIndices.csv')
+VALIDATION_FILE_NAME = os.path.join(ROOT_DIR, \
+            'data/validationIndices.csv')
 
-SAMPLE_SUBMISSION = os.path.join(ROOT_DIR,\
-        'data/sampleSubmission.csv')
+SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
+            'data/sampleSubmission.csv')
 ITEM_COUNT = 1000
 USER_COUNT = 10000
 
@@ -60,6 +60,10 @@ def impute(data, reconstruction):
     for row_index, col_index in observed_indeces:
         reconstruction[row_index][col_index] = data[row_index][col_index]
     return reconstruction
+
+def get_validation_indices():
+    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    return validation_indices
 
 def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
@@ -120,6 +124,38 @@ def predict_by_avg(data, by_row):
         row[empty] = row_sum / np.count_nonzero(row)
     return data.T if by_row else data
 
+def novel_init(data):
+    global_average = np.sum(data) / np.count_nonzero(data)
+    global_variance = np.var(data[data != 0])
+
+    m = np.zeros((data.shape[1],))
+    for i in range(data.shape[1]):
+        ratings = data[:, i]
+        ratings = ratings[ratings != 0]
+        movie_variance = np.var(ratings)
+        k = movie_variance / global_variance
+        m[i] = (global_average * k + np.sum(ratings)) /\
+               (k + np.count_nonzero(ratings))
+
+    u = np.zeros((data.shape[0],))
+
+    for i in range(data.shape[0]):
+        user_ratings = data[i]
+        diff = m - user_ratings
+        r = diff[user_ratings != 0]
+        k = np.var(r) / global_variance
+        u[i] = (global_average * k + sum(r)) / (k + sum(r))
+
+    w = 10.0
+    user_counts = np.count_nonzero(data, axis=1)
+    movie_counts = np.count_nonzero(data, axis=0)
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
+            data[i, j] = d * m[j] + (1 - d) * u[i]
+
+    return data
+
 def predict_bias(data):
     total_average = np.mean(data[np.nonzero(data)])
     row_biases = np.zeros(data.shape[0])
@@ -134,7 +170,7 @@ def predict_bias(data):
 
     for col_index in range(data.shape[1]):
         col_biases[col_index] = np.sum(data[:][col_index]) / \
-                np.count_nonzero(data[:][col_index]) - total_average
+                                np.count_nonzero(data[:][col_index]) - total_average
 
     # plt.hist(col_biases)
     # plt.show()
