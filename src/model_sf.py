@@ -14,8 +14,8 @@ REGULARIZATION = 0.02
 EPSILON = 0.0001
 
 def is_single_regularization(regularization):
-    return isinstance(regularization, np.float64) or
-            isinstance(regularization, float) or
+    return isinstance(regularization, np.float64) or\
+            isinstance(regularization, float) or\
             isinstance(regularization, int)
 
 def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
