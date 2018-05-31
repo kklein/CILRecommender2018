@@ -151,7 +151,7 @@ def predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier):
     y_predicted = classifier.predict(x_validate)
     print("ypredicted", len(y_predicted))
     # write_nn_predictions(data_matrix, y_predicted)
-    return y_predicted
+    return y_predicted, y_test
 
 def main():
     np.random.seed(10)
@@ -178,16 +178,20 @@ def main():
         predict_by_nn(imputed_data, imputed_data, nn_configuration, classifier)
         prediction = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
+
     if True:
-        nn_configuration = (embedding_type, embedding_dimensions, architecture, n_training_samples, alpha)
+        architecture = (5,)
+        nn_configuration = ("svd",10, architecture, n_training_samples, alpha)
         classifier =  MLPRegressor(architecture, alpha=alpha)
-        prediction_1 = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
-        nn_configuration = ("nmf", embedding_dimensions, architecture, n_training_samples, alpha)
+        prediction_1, _ = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        print(prediction_1[:100])
+        architecture = (50,)
+        nn_configuration = ("nmf", 100, architecture, n_training_samples, alpha)
         classifier =  MLPRegressor(architecture, alpha=alpha)
-        prediction_2 = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
-        prediction = np.mean([prediction_1, prediction_2], axis=1)
-        write_nn_predictions(data_matrix, prediction) 
-
-
+        prediction_2, y_test = predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier)
+        prediction = np.mean([prediction_1, prediction_2], axis=0)
+        print(prediction_2[:100])
+        print(prediction[:100])
+        write_nn_predictions(data_matrix, prediction)
 if __name__ == '__main__':
     main()
