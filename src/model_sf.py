@@ -20,8 +20,6 @@ def is_single_regularization(regularization):
 
 def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization):
-    print('learning with regularization: ' + str(regularization))
-
     if is_single_regularization(regularization):
         regularization_1 = regularization
         regularization_2 = regularization
@@ -32,9 +30,10 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
     total_average = np.mean(data[np.nonzero(data)])
     approximation_rank = u_embedding.shape[1]
     for feature_index in range(approximation_rank):
-        print("Feature %d." % feature_index)
+        # print("Feature %d." % feature_index)
         for i in range(n_epochs):
-            print("Epoch {0}:".format(i))
+            last_rsme = 5
+            # print("Epoch {0}:".format(i))
             shuffle(training_indices)
             for k, l in training_indices:
                 residual = data[k, l] - total_average - u_bias[k] - z_bias[l]\
@@ -54,6 +53,12 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                 z_embedding[l, feature_index] += z_update
                 u_bias[k] += u_bias_update
                 z_bias[l] += z_bias_update
+            reconstruction = utils_sgd.reconstruct(
+                    u_embedding, z_embedding, total_average, u_bias, z_bias)
+            rsme = utils.compute_rsme(data, reconstruction)
+            if abs(last_rsme - rsme) < EPSILON:
+                break
+            last_rsme = rsme
 
 # sf stands for Simon Funk.
 def predict_by_sf(data, approximation_rank=None, regularization=REGULARIZATION,
