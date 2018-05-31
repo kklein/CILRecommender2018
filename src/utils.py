@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
-TRAINING_FILE_NAME = os.path.join(ROOT_DIR,\
-        'data/trainingIndices.csv')
-VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,\
-        'data/validationIndices.csv')
+TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
+                                  'data/trainingIndices.csv')
+VALIDATION_FILE_NAME = os.path.join(ROOT_DIR, \
+                                    'data/validationIndices.csv')
 
-SAMPLE_SUBMISSION = os.path.join(ROOT_DIR,\
-        'data/sampleSubmission.csv')
+SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
+                                 'data/sampleSubmission.csv')
 ITEM_COUNT = 1000
 USER_COUNT = 10000
 
@@ -37,12 +37,14 @@ def load_ratings(data_file=DATA_FILE):
             ratings.append((row - 1, col - 1, rating))
     return ratings
 
+
 def mask_validation(data):
     masked_data = np.copy(data)
     validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     for row_index, col_index in validation_indices:
         masked_data[row_index][col_index] = 0
     return masked_data
+
 
 def ratings_to_matrix(ratings):
     """Converts a list of ratings to a numpy matrix."""
@@ -55,19 +57,28 @@ def ratings_to_matrix(ratings):
     print("Finished building rating matrix.")
     return matrix
 
+
 def impute(data, reconstruction):
     observed_indeces = get_observed_indeces(data)
     for row_index, col_index in observed_indeces:
         reconstruction[row_index][col_index] = data[row_index][col_index]
     return reconstruction
 
+
+def get_validation_indices():
+    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    return validation_indices
+
+
 def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
     return list(zip(row_indices, col_indices))
 
+
 def get_unobserved_indeces(data):
     row_indices, col_indices = np.where(data == 0)
     return list(zip(row_indices, col_indices))
+
 
 def get_indeces_from_file(file_name):
     indeces = []
@@ -78,6 +89,7 @@ def get_indeces_from_file(file_name):
             i, j = line.split(",")
             indeces.append((int(i), int(j)))
     return indeces
+
 
 def get_indices_to_predict():
     """Get list of indices to predict from sample submission file.
@@ -94,23 +106,27 @@ def get_indices_to_predict():
             indices_to_predict.append((i, j))
     return indices_to_predict
 
+
 def write_ratings(predictions, submission_file):
     with open(submission_file, 'w') as file:
         file.write('Id,Prediction\n')
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
+
 def reconstruction_to_predictions(reconstruction, submission_file):
     indices_to_predict = get_indices_to_predict()
     predictions = list(map(lambda t: \
-            (t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]]), \
-            indices_to_predict))
+                               (t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]]), \
+                           indices_to_predict))
     write_ratings(predictions, submission_file)
+
 
 def clip(data):
     data[data > 5] = 5
     data[data < 1] = 1
     return data
+
 
 def predict_by_avg(data, by_row):
     data = data.T if by_row else data
@@ -120,6 +136,39 @@ def predict_by_avg(data, by_row):
         row[empty] = row_sum / np.count_nonzero(row)
     return data.T if by_row else data
 
+
+def novel_init(data):
+    global_average = np.sum(data) / np.count_nonzero(data)
+    global_variance = np.var(data[data != 0])
+
+    m = np.zeros((data.shape[1],))
+    for i in range(data.shape[1]):
+        ratings = data[:, i]
+        ratings = ratings[ratings != 0]
+        movie_variance = np.var(ratings)
+        k = movie_variance / global_variance
+        m[i] = (global_average * k + np.sum(ratings)) / (k + np.count_nonzero(ratings))
+
+    u = np.zeros((data.shape[0],))
+
+    for i in range(data.shape[0]):
+        user_ratings = data[i]
+        diff = m - user_ratings
+        r = diff[user_ratings != 0]
+        k = np.var(r) / global_variance
+        u[i] = (global_average * k + sum(r)) / (k + sum(r))
+
+    w = 10.0
+    user_counts = np.count_nonzero(data, axis=1)
+    movie_counts = np.count_nonzero(data, axis=0)
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
+            data[i, j] = d * m[j] + (1 - d) * u[i]
+
+    return data
+
+
 def predict_bias(data):
     total_average = np.mean(data[np.nonzero(data)])
     row_biases = np.zeros(data.shape[0])
@@ -127,14 +176,14 @@ def predict_bias(data):
 
     for row_index in range(data.shape[0]):
         row_biases[row_index] = np.sum(data[row_index]) / \
-                np.count_nonzero(data[row_index]) - total_average
+                                np.count_nonzero(data[row_index]) - total_average
 
     # plt.hist(row_biases)
     # plt.show()
 
     for col_index in range(data.shape[1]):
         col_biases[col_index] = np.sum(data[:][col_index]) / \
-                np.count_nonzero(data[:][col_index]) - total_average
+                                np.count_nonzero(data[:][col_index]) - total_average
 
     # plt.hist(col_biases)
     # plt.show()
@@ -146,13 +195,14 @@ def predict_bias(data):
         for col_index in range(data.shape[1]):
             if data[row_index, col_index] == 0:
                 new_value = total_average + \
-                        row_biases[row_index] + col_biases[col_index]
+                            row_biases[row_index] + col_biases[col_index]
                 data[row_index, col_index] = new_value
                 values[counter] = new_value
                 counter += 1
     # plt.hist(values)
     # plt.show()
     return data
+
 
 def compute_rsme(data, prediction):
     validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
