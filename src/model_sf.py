@@ -15,6 +15,13 @@ EPSILON = 0.0001
 
 def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization):
+
+    if isinstance(regularization, int):
+        regularization_1 = regularization
+        regularization_2 = regularization
+    else:
+        regularization_1, regularization_2 = regularization
+
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     approximation_rank = u_embedding.shape[1]
@@ -28,14 +35,14 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                         - np.dot(u_embedding[k, :feature_index + 1],\
                         z_embedding[l, :feature_index + 1])
                 u_update = LEARNING_RATE * residual * z_embedding[l, feature_index] - \
-                        utils.safe_norm(LEARNING_RATE * regularization * \
+                        utils.safe_norm(LEARNING_RATE * regularization_1 * \
                         u_embedding[k, feature_index])
                 z_update = LEARNING_RATE * residual * u_embedding[k, feature_index] - \
-                        utils.safe_norm(LEARNING_RATE * regularization * \
+                        utils.safe_norm(LEARNING_RATE * regularization_1 * \
                         z_embedding[l, feature_index])
-                u_bias_update = LEARNING_RATE * (residual - regularization *
+                u_bias_update = LEARNING_RATE * (residual - regularization_2 *
                         np.absolute(u_bias[k]))
-                z_bias_update = LEARNING_RATE * (residual - regularization *
+                z_bias_update = LEARNING_RATE * (residual - regularization_2 *
                         np.absolute(z_bias[l]))
                 u_embedding[k, feature_index] += u_update
                 z_embedding[l, feature_index] += z_update
