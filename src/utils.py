@@ -16,11 +16,9 @@ USER_COUNT = 10000
 
 # https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
 def safe_norm(x):
-    xmax = np.max(x)
-    if xmax != 0:
-        return np.linalg.norm(x / xmax) * xmax
-    else:
-        return np.linalg.norm(x)
+    # Add small constant to avoid division by (almost) 0.
+    divisor = np.max(x) + 0.01
+    return np.linalg.norm(x / xmax) * xmax
 
 def load_ratings(data_file=DATA_FILE):
     ratings = []
