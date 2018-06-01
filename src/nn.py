@@ -178,9 +178,12 @@ def main():
     data_matrix = utils.ratings_to_matrix(all_ratings)
     masked_data_matrix = utils.mask_validation(data_matrix)
     # imputed_data = utils.do_smart_init(copy.copy(masked_data_matrix))
-    # imputed_data = utils.predict_by_avg(copy.copy(masked_data_matrix), True)
+    # imputed_data = utils.predict_by_avg(copy.copy(masked_data_matrix), True)
     imputed_data = utils.novel_init(copy.copy(masked_data_matrix))
-    print(imputed_data[:10])
+
+    # Test knn smoothing
+    u, _ = get_embeddings(imputed_data, "svd", 20)
+    utils.knn_smoothing(imputed_data, u)
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"
