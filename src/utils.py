@@ -19,7 +19,7 @@ USER_COUNT = 10000
 def safe_norm(x):
     # Add small constant to avoid division by (almost) 0.
     divisor = np.max(x) + 0.01
-    return np.linalg.norm(x / xmax) * xmax
+    return np.linalg.norm(x / divisor) * divisor
 
 def load_ratings(data_file=DATA_FILE):
     ratings = []
