@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
@@ -195,3 +196,32 @@ def compute_rsme(data, prediction):
     for i, j in validation_indices:
         squared_error += (data[i][j] - prediction[i][j]) ** 2
     return np.sqrt(squared_error / len(validation_indices))
+
+def knn_smoothing(data, user_embeddings):
+    normalized_user_embeddings = sklearn.preprocessing.normalize(user_embeddings)
+    n_neighbors = 3
+    knn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors + 1)
+    knn.fit(normalized_user_embeddings)
+    distances, neighbors = knn.kneighbors(normalized_user_embeddings)
+    distances = distances[:, 1:]
+    neighbors = neighbors[:, 1:]
+
+    ones = np.ones(distances.shape)
+    similarities = ones - distances
+    weights = np.square(np.square(similarities))
+    smoothed_data = np.zeros(data.shape)
+    aggregated_neighbor_ratings = np.zeros(data.shape)
+
+    for i in range(data.shape[0]):
+        stacked_ratings = []
+        for neighbor in neighbors[i]:
+            stacked_ratings.append(data[neighbor])
+        stacked_ratings = np.asarray(stacked_ratings)
+        aggregated_neighbor_ratings[i] = np.matmul(weights[i], stacked_ratings) / sum(weights[i])
+
+    weight_knn = 0.01
+    for i in range(data.shape[0]):
+        smoothed_data[i] = (1 - weight_knn) * data[i] + weight_knn * aggregated_neighbor_ratings[i]
+
+    smoothed_data = clip(smoothed_data)
+    return smoothed_data
