@@ -134,6 +134,11 @@ def write_nn_predictions(data_matrix, y_predicted):
             data_matrix[index] = y_predicted[a]
         else:
             data_matrix[index] = 3
+    # Test knn smoothing
+    u, _ = get_embeddings(data_matrix, "svd", 20)
+    data_matrix = utils.knn_smoothing(data_matrix, u)
+
+
 
     utils.reconstruction_to_predictions(data_matrix, SUBMISSION_FILE)
 
@@ -180,10 +185,6 @@ def main():
     # imputed_data = utils.do_smart_init(copy.copy(masked_data_matrix))
     # imputed_data = utils.predict_by_avg(copy.copy(masked_data_matrix), True)
     imputed_data = utils.novel_init(copy.copy(masked_data_matrix))
-
-    # Test knn smoothing
-    u, _ = get_embeddings(imputed_data, "svd", 20)
-    utils.knn_smoothing(imputed_data, u)
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"
