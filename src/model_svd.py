@@ -22,7 +22,7 @@ def get_embeddings(imputed_data, approximation_rank):
     np.fill_diagonal(s, np.sqrt(singular_values))
     u_embeddings = np.matmul(u_embeddings, s)
     z_embeddings = np.matmul(s, z_embeddings)
-    z_embedding = z_embeddings.T
+    z_embeddings = z_embeddings.T
     return u_embeddings, z_embeddings
 
 def predict_by_svd(data, imputed_data, approximation_rank,):
