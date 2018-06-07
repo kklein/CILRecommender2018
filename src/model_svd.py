@@ -33,6 +33,7 @@ def predict_by_svd(data, imputed_data, approximation_rank,):
         reconstruction = np.matmul(u_embeddings, z_embeddings)
         if epoch_index < N_EPOCHS - 1:
             reconstruction = utils.impute(data, reconstruction)
+    reconstruction = utils.clip(reconstruction)
     return reconstruction
 
 def main():
@@ -47,7 +48,6 @@ def main():
     else:
         imputed_data = utils.predict_by_avg(data, True)
     reconstruction = predict_by_svd(masked_data, imputed_data, k)
-    reconstruction = utils.clip(reconstruction)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME: %f' % rsme)
     write_svd_score(rsme, k, take_bias)
