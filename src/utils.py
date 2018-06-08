@@ -18,20 +18,31 @@ USER_COUNT = 10000
 # https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
 def safe_norm(x):
     # Add small constant to avoid division by (almost) 0.
-    divisor = np.max(x) + 0.01
+    divisor = np.max([np.max(x), 1])
+    # divisor = np.max(x) + 0.01
     return np.linalg.norm(x / divisor) * divisor
 
-def load_ratings(data_file=DATA_FILE):
+def load_ratings(data_file = DATA_FILE):
+    """Loads the rating data from the specified file.
+    Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
+    Assumes the file has a header (which is ignored), and that the ratings are
+    then specified as 'rXXX_cXXX,X', where the 'X' blanks specify the row, the
+    column, and then the actual (integer) rating.
+    """
+    #data_file = DATA_FILE
     ratings = []
     with open(data_file, 'r') as file:
         # Read header.
         _ = file.readline()
         for line in file:
-            key, value_string = line.split(",")
+            key, value_string = line.rstrip().split(",")
             rating = float(value_string)
-            row_string, col_string = key.split("_")
-            row = int(row_string[1:])
-            col = int(col_string[1:])
+            row_string, col_string = key.rstrip().split("_")
+            row = int(float(row_string[1:]))
+            col = int(float(col_string[1:]))
+            if rating < 1 or rating > 5:
+                raise ValueError("Found illegal rating value [%d]." % rating)
+
             ratings.append((row - 1, col - 1, rating))
     return ratings
 
@@ -223,3 +234,17 @@ def knn_smoothing(data, user_embeddings):
 
     smoothed_data = clip(smoothed_data)
     return smoothed_data
+
+
+def k_folds(data, n_folds):
+    """
+    return n_folds splits of the data where the nonzero entries are equally distributed 
+    """
+    nonzero_indices = np.nonzero(data)
+    # print(nonzero_indices[1:2])
+    print("Nonzero: ", nonzero_indices)
+    fold_size = len(nonzero_indices[0]) // n_folds
+    print("Size of fold: ", fold_size)
+    folds_indices = [[nonzero_indices[j][i:i + fold_size] for i in range(0, len(nonzero_indices[0]), fold_size)]
+                     for j in range(2)]
+    return folds_indices
