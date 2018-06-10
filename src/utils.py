@@ -18,8 +18,7 @@ USER_COUNT = 10000
 # https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
 def safe_norm(x):
     # Add small constant to avoid division by (almost) 0.
-    divisor = np.max([np.max(x), 1])
-    # divisor = np.max(x) + 0.01
+    divisor = np.max(x) + 0.01
     return np.linalg.norm(x / divisor) * divisor
 
 def load_ratings(data_file = DATA_FILE):
@@ -113,8 +112,9 @@ def write_ratings(predictions, submission_file):
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
-def reconstruction_to_predictions(reconstruction, submission_file):
-    indices_to_predict = get_indices_to_predict()
+
+def reconstruction_to_predictions(reconstruction, submission_file, indices_to_predict=get_indices_to_predict()):
+    # TODO(ben): remove default argument
     predictions = list(map(lambda t: \
             (t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]]), \
             indices_to_predict))
@@ -206,6 +206,13 @@ def compute_rsme(data, prediction):
         squared_error += (data[i][j] - prediction[i][j]) ** 2
     return np.sqrt(squared_error / len(validation_indices))
 
+def compute_fold_rmse(data, prediction, validation_indices):
+    # print("validation_indices: ", validation_indices)
+    squared_error = 0
+    for i, j in validation_indices:
+        squared_error += (data[i][j] - prediction[i][j]) ** 2
+    return np.sqrt(squared_error / len(validation_indices))
+
 def knn_smoothing(data, user_embeddings):
     normalized_user_embeddings = sklearn.preprocessing.normalize(user_embeddings)
     n_neighbors = 3
@@ -240,11 +247,14 @@ def k_folds(data, n_folds):
     """
     return n_folds splits of the data where the nonzero entries are equally distributed 
     """
+    # TODO: shuffle indices, make sure we don't lose track
     nonzero_indices = np.nonzero(data)
     # print(nonzero_indices[1:2])
-    print("Nonzero: ", nonzero_indices)
-    fold_size = len(nonzero_indices[0]) // n_folds
-    print("Size of fold: ", fold_size)
-    folds_indices = [[nonzero_indices[j][i:i + fold_size] for i in range(0, len(nonzero_indices[0]), fold_size)]
-                     for j in range(2)]
+    print("Nonzero shape: ", nonzero_indices[0].shape)
+
+    fold_splits = np.round(np.linspace(0, len(nonzero_indices[0]), n_folds + 1)).astype(int)
+    print("Splitting data into folds at {}".format(fold_splits))
+    folds_indices = [[nonzero_indices[j][fold_splits[i]:fold_splits[i + 1]] for j in range(2)]
+                     for i in range(n_folds)]
+
     return folds_indices

@@ -7,7 +7,7 @@ import utils_sgd
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/biased15_sgd_scores.csv')
-N_EPOCHS = 15
+N_EPOCHS = 1
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.0001
@@ -47,6 +47,15 @@ def predict_by_sgd(data, approximation_rank=None, regularization=REGULARIZATION,
     if u_embedding is None or z_embedding is None:
         raise ValueError("embedding is None!")
     u_bias, z_bias = utils_sgd.get_initialized_biases(data)
+    # run learn() several times with different data, u and z embeddings
+    # to get these datasets, run a function that splits current training data into folds (use sklearn version?)
+
+
+
+    # run the meta-learner using the output u/z embeddings as an input to a NN
+
+    # the loss should be the RMSE on the second validation set
+
     learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization)
     total_average = np.mean(data[np.nonzero(data)])
@@ -66,10 +75,32 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    reconstruction = predict_by_sgd(masked_data, k, regularization)
-    rsme = utils.compute_rsme(data, reconstruction)
-    utils_sgd.write_sgd_score(rsme, k, regularization, SCORE_FILE)
-    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    # for every fold in training data, train one regressor via SGD and
+    # validate on the holdout set. I.e. if we have 4 folds, train 4 different SGD regressors
+    # and return each of their reconstructions. For testing, just average those 4 and see what the RMSE is - should be better than a single regressor.
+
+    # write a new version of compute RMSE that doesn't automatically load the validation indices from a file
+    reconstruction = []
+    num_folds = 4
+    kfolds_indices = utils.k_folds(masked_data, num_folds)
+    # print(kfolds_indices[0][0].shape)
+    # print("kfolds_indices:", kfolds_indices)
+    for i, indices in enumerate(kfolds_indices):
+        # train using num_folds - 1 folds
+        training_indices = np.hstack([kfolds_indices[j] for j in range(len(kfolds_indices)) if j != i])
+        fold = np.zeros_like(masked_data)
+        fold[training_indices] = masked_data[training_indices]
+        reconstruction.append(predict_by_sgd(fold, k, regularization))
+        validation_indices = [(indices[0][i], indices[1][i]) for i in range(len(indices[0]))]
+
+        rmse = utils.compute_fold_rmse(data, reconstruction[-1], validation_indices)
+        print("RMSE for fold {}: {}".format(i, rmse))
+        utils_sgd.write_sgd_score(rmse, k, regularization, SCORE_FILE)
+        utils.reconstruction_to_predictions(reconstruction[-1], SUBMISSION_FILE.split('.csv')[0] + str(i) + '.csv', validation_indices)
+
+#     reconstruction = predict_by_sgd(masked_data, k, regularization)
+#     rsme = utils.compute_rsme(data, reconstruction)
+
 
 if __name__ == '__main__':
     main()
