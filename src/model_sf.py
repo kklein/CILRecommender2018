@@ -31,8 +31,8 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
     approximation_rank = u_embedding.shape[1]
     for feature_index in range(approximation_rank):
         # print("Feature %d." % feature_index)
+        last_rsme = 5
         for i in range(n_epochs):
-            last_rsme = 5
             # print("Epoch {0}:".format(i))
             shuffle(training_indices)
             for k, l in training_indices:
