@@ -6,25 +6,15 @@ import utils_sgd
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sf_sgd.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/sf15_sgd_scores.csv')
-N_EPOCHS = 15
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/sf100_sgd_scores.csv')
+N_EPOCHS = 100
 LEARNING_RATE = 0.001
-REGULARIZATION = 0.02
+REG_EMB = 0.02
+REG_BIAS = 0.05
 EPSILON = 0.0001
 
-def is_single_regularization(regularization):
-    return isinstance(regularization, np.float64) or\
-            isinstance(regularization, float) or\
-            isinstance(regularization, int)
-
 def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
-        regularization):
-    if is_single_regularization(regularization):
-        reg_emb = regularization
-        reg_bias = regularization
-    else:
-        reg_emb, reg_bias = regularization
-
+        reg_emb, reg_bias):
     residual_data = data
 
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
@@ -69,8 +59,8 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                 raise ValueError('Found NaN in embedding after feature %d.' % feature_index)
 
 # sf stands for Simon Funk.
-def predict_by_sf(data, approximation_rank=None, regularization=REGULARIZATION,
-        n_epochs=N_EPOCHS, u_embedding=None, z_embedding=None):
+def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
+        reg_bias=REG_BIAS, n_epochs=N_EPOCHS, u_embedding=None, z_embedding=None):
     np.random.seed(42)
     if u_embedding is None and z_embedding is None:
         print("Initialize embeddings.")
@@ -80,29 +70,27 @@ def predict_by_sf(data, approximation_rank=None, regularization=REGULARIZATION,
         raise ValueError("embedding is None!")
     u_bias, z_bias = utils_sgd.get_initialized_biases(data)
     learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
-        regularization)
+        reg_emb, reg_bias)
     total_average = np.mean(data[np.nonzero(data)])
     reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias)
     utils.clip(reconstruction)
     return reconstruction
 
 def main():
-    # k = 10
     # k = int(sys.argv[1])
-    # regularization = REGULARIZATION
     # regularization = float(sys.argv[2])
-    ranks = [i for i in range(3, 100)]
-    # regularizations = [0.0005 * i for i in range(400)]
-    regularization = [0.02, 0.05]
+    ranks = [i for i in range(3, 40)]
+    regularizations = [0.005, 0.002, 0.02, 0.05, 0.2, 0.5]
+    reg_emb = np.random.choice(regularizations)
+    reg_bias = np.random.choice(regularizations)
     k = np.random.choice(ranks)
-    # regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    reconstruction = predict_by_sf(masked_data, k, regularization)
+    reconstruction = predict_by_sf(masked_data, k, reg_emb, reg_bias)
     rsme = utils.compute_rsme(data, reconstruction)
-    utils_sgd.write_sgd_score(rsme, k, regularization, SCORE_FILE)
-    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, SCORE_FILE)
+    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()
