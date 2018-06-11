@@ -93,7 +93,7 @@ def main():
     svd_initiliazied = random.choice([True, False])
     if svd_initiliazied:
         initialization_string = 'svd'
-        imputed_data = utils.novel_init(data)
+        imputed_data = utils.novel_init(masked_data)
         u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
