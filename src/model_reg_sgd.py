@@ -59,7 +59,7 @@ def predict_by_sgd(data, approximation_rank=None, regularization=REGULARIZATION,
     total_average = np.mean(data[np.nonzero(data)])
     reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias)
     utils.clip(reconstruction)
-    return reconstruction
+    return reconstruction, u_embedding
 
 def main():
     # k = 10
@@ -73,9 +73,15 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    reconstruction = predict_by_sgd(masked_data, k, regularization)
+    reconstruction, u_embeddings = predict_by_sgd(masked_data, k, regularization)
     rsme = utils.compute_rsme(data, reconstruction)
-    utils_sgd.write_sgd_score(rsme, k, regularization, regularization,
+    print('RSME before smoothing: %f' % rsme)
+    utils_sgd.write_sgd_score(rsme, k, regularization, regularization, 'False',
+            SCORE_FILE)
+    reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
+    rsme = utils.compute_rsme(data, reconstruction)
+    print('RSME after smoothing: %f' % rsme)
+    utils_sgd.write_sgd_score(rsme, k, regularization, regularization, 'True',
             SCORE_FILE)
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
