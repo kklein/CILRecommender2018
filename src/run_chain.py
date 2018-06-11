@@ -18,6 +18,7 @@ def main():
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
     imputed_data = utils.novel_init(masked_data)
+    print('Initial imputation completed.')
     if np.isnan(imputed_data).any():
         raise ValueError('Matrix initialization contains NaNs.')
     for _ in range(N_META_EPOCHS):
@@ -26,7 +27,7 @@ def main():
                 svd.get_embeddings(imputed_data, APPROXIMATION_RANK)
         if np.isnan(u_embeddings).any() or np.isnan(z_embeddings).any():
             raise ValueError('Embeddings contain NaNs.')
-        print("Executings sgd by sf.")
+        print("Executing sgd by sf.")
         reconstruction = sf.predict_by_sf(masked_data,
                 regularization=REGULARIZATION, n_epochs=N_EPOCHS,
                 u_embedding=u_embeddings, z_embedding=z_embeddings)
