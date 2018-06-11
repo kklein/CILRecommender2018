@@ -38,7 +38,8 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             z_embedding[l, :] += z_update
             u_bias[k] += u_bias_update
             z_bias[l] += z_bias_update
-        reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias)
+        reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding,
+                total_average, u_bias, z_bias)
         rsme = utils.compute_rsme(data, reconstruction)
         print(rsme)
         if abs(last_rsme - rsme) < EPSILON:
@@ -46,7 +47,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         last_rsme = rsme
 
 def predict_by_sgd(data, approximation_rank=None, regularization=REGULARIZATION,
-        n_epochs=N_EPOCHS, u_embedding=None, z_embedding=None):
+        u_embedding=None, z_embedding=None, n_epochs=N_EPOCHS):
     np.random.seed(42)
     if u_embedding is None and z_embedding is None:
         print("Initialize embeddings.")
