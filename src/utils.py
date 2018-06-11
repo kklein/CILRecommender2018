@@ -18,7 +18,7 @@ USER_COUNT = 10000
 # https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
 def safe_norm(x):
     # Add small constant to avoid division by (almost) 0.
-    divisor = np.max(x) + 0.01
+    divisor = np.abs(np.max(x)) + 0.01
     return np.linalg.norm(x / divisor) * divisor
 
 def load_ratings(data_file=DATA_FILE):
@@ -151,7 +151,6 @@ def novel_init(data):
         for j in range(data.shape[1]):
             d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
             data[i, j] = d * m[j] + (1 - d) * u[i]
-
     return data
 
 def predict_bias(data):
