@@ -62,7 +62,8 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
 
 # sf stands for Simon Funk.
 def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
-        reg_bias=REG_BIAS, n_epochs=N_EPOCHS, u_embedding=None, z_embedding=None):
+        reg_bias=REG_BIAS, u_embedding=None, z_embedding=None,
+        n_epochs=N_EPOCHS):
     np.random.seed(42)
     if u_embedding is None and z_embedding is None:
         print("Initialize embeddings.")
