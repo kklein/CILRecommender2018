@@ -14,7 +14,7 @@ EPSILON = 0.00001
 
 def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization):
-    last_rsme = 0.5
+    last_rsme = 5
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     for i in range(n_epochs):
