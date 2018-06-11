@@ -51,6 +51,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                     z_bias)
             residual_data = data - reconstruction
             rsme = utils.compute_rsme(data, reconstruction)
+            print(rsme)
             if abs(last_rsme - rsme) < EPSILON:
                 break
             last_rsme = rsme
