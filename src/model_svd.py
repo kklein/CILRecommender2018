@@ -4,7 +4,7 @@ import numpy as np
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/submission_svd.csv')
+        'data/submission_svd30_7.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd30_scores.csv')
 N_EPOCHS = 30
 
@@ -37,8 +37,9 @@ def predict_by_svd(data, imputed_data, approximation_rank,):
     return reconstruction, u_embeddings, z_embeddings
 
 def main():
-    ranks = [i for i in range(3, 25)]
-    k = np.random.choice(ranks)
+    # ranks = [i for i in range(3, 25)]
+    # k = np.random.choice(ranks)
+    k = 7
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
@@ -47,12 +48,13 @@ def main():
             predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME before smoothing: %f' % rsme)
-    write_svd_score(rsme, k, False)
+    # write_svd_score(rsme, k, False)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
     rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME before after smoothing: %f' % rsme)
-    write_svd_score(rsme, k, True)
-    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    # print('RSME before after smoothing: %f' % rsme)
+    # write_svd_score(rsme, k, True)
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()
