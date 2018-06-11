@@ -6,7 +6,7 @@ import utils
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_svd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd15_scores.csv')
-N_EPOCHS = 15
+N_EPOCHS = 30
 
 def write_svd_score(score, k, take_bias):
     with open(SCORE_FILE, 'a+') as file:
@@ -30,11 +30,11 @@ def predict_by_svd(data, imputed_data, approximation_rank,):
     for epoch_index in range(N_EPOCHS):
         u_embeddings, z_embeddings =\
                 get_embeddings(imputed_data, approximation_rank)
-        reconstruction = np.matmul(u_embeddings, z_embeddings)
+        reconstruction = np.matmul(u_embeddings, z_embeddings.T)
         if epoch_index < N_EPOCHS - 1:
             reconstruction = utils.impute(data, reconstruction)
     reconstruction = utils.clip(reconstruction)
-    return reconstruction
+    return reconstruction, u_embeddings, z_embeddings
 
 def main():
     ranks = [i for i in range(3, 30)]
@@ -47,7 +47,7 @@ def main():
         imputed_data = utils.predict_bias(data)
     else:
         imputed_data = utils.predict_by_avg(data, True)
-    reconstruction = predict_by_svd(masked_data, imputed_data, k)
+    reconstruction, _, _ = predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME: %f' % rsme)
     write_svd_score(rsme, k, take_bias)
