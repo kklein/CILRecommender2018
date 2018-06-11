@@ -195,7 +195,7 @@ def compute_rsme(data, prediction):
         squared_error += (data[i][j] - prediction[i][j]) ** 2
     return np.sqrt(squared_error / len(validation_indices))
 
-def knn_smoothing(data, user_embeddings):
+def knn_smoothing(reconstruction, user_embeddings):
     normalized_user_embeddings = sklearn.preprocessing.normalize(user_embeddings)
     n_neighbors = 3
     knn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors + 1)
@@ -207,19 +207,19 @@ def knn_smoothing(data, user_embeddings):
     ones = np.ones(distances.shape)
     similarities = ones - distances
     weights = np.square(np.square(similarities))
-    smoothed_data = np.zeros(data.shape)
-    aggregated_neighbor_ratings = np.zeros(data.shape)
+    smoothed_data = np.zeros(reconstruction.shape)
+    aggregated_neighbor_ratings = np.zeros(reconstruction.shape)
 
-    for i in range(data.shape[0]):
+    for i in range(reconstruction.shape[0]):
         stacked_ratings = []
         for neighbor in neighbors[i]:
-            stacked_ratings.append(data[neighbor])
+            stacked_ratings.append(reconstruction[neighbor])
         stacked_ratings = np.asarray(stacked_ratings)
         aggregated_neighbor_ratings[i] = np.matmul(weights[i], stacked_ratings) / sum(weights[i])
 
     weight_knn = 0.01
-    for i in range(data.shape[0]):
-        smoothed_data[i] = (1 - weight_knn) * data[i] + weight_knn * aggregated_neighbor_ratings[i]
+    for i in range(reconstruction.shape[0]):
+        smoothed_data[i] = (1 - weight_knn) * reconstruction[i] + weight_knn * aggregated_neighbor_ratings[i]
 
     smoothed_data = clip(smoothed_data)
     return smoothed_data
