@@ -1,8 +1,9 @@
-from random import shuffle
 import os
+import random
 import numpy as np
 import utils
 import utils_sgd
+import model_svd
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sf_sgd.csv')
@@ -25,7 +26,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         last_rsme = 5
         for i in range(n_epochs):
             print("Epoch {0}:".format(i))
-            shuffle(training_indices)
+            random.shuffle(training_indices)
 
             for k, l in training_indices:
                 u_value = u_embedding[k, feature_index]
@@ -75,7 +76,7 @@ def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
     total_average = np.mean(data[np.nonzero(data)])
     reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias)
     utils.clip(reconstruction)
-    return reconstruction
+    return reconstruction, u_embedding
 
 def main():
     # k = int(sys.argv[1])
@@ -88,9 +89,29 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    reconstruction = predict_by_sf(masked_data, k, reg_emb, reg_bias)
+    svd_initiliazied = random.choice([True, False])
+    if svd_initiliazied:
+        initialization_string = 'svd'
+        imputed_data = utils.novel_init(data)
+        u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
+        reconstruction, u_embeddings =\
+                predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
+                z_embeddings)
+    else:
+        initialization_string = 'rand'
+        reconstruction, u_embeddings =\
+                predict_by_sf(masked_data, k, reg_emb, reg_bias)
+
     rsme = utils.compute_rsme(data, reconstruction)
-    utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, SCORE_FILE)
+    print('RSME before smoothing: %f' % rsme)
+    utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, '!S',
+            initialization_string, SCORE_FILE)
+    reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
+    rsme = utils.compute_rsme(data, reconstruction)
+    print('RSME after smoothing: %f' % rsme)
+    utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, 'S',
+            initialization_string, SCORE_FILE)
+
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
