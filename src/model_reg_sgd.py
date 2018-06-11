@@ -20,18 +20,18 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         print("Epoch {0}:".format(i))
         shuffle(training_indices)
         for k, l in training_indices:
-            residual = data[k, l] - total_average - u_bias[k] - z_bias[l]\
-                    - np.dot(u_embedding[k, :], z_embedding[l, :])
-            u_update = LEARNING_RATE * residual * z_embedding[l, :] - \
-                    utils.safe_norm(LEARNING_RATE * regularization * \
-                    u_embedding[k, :])
-            z_update = LEARNING_RATE * residual * u_embedding[k, :] - \
-                    utils.safe_norm(LEARNING_RATE * regularization * \
-                    z_embedding[l, :])
+            u_values = u_embedding[k, :]
+            z_values = z_embedding[l, :]
+            residual = data[k, l] - total_average - u_bias[k] - z_bias[l] -\
+                    np.dot(u_values, z_values)
+            u_update = LEARNING_RATE * (residual * z_values - regularization *
+                    u_values)
+            z_update = LEARNING_RATE * (residual * u_values - regularization *
+                    z_values)
             u_bias_update = LEARNING_RATE * (residual - regularization *
-                    np.absolute(u_bias[k]))
+                    u_bias[k])
             z_bias_update = LEARNING_RATE * (residual - regularization *
-                    np.absolute(z_bias[l]))
+                    z_bias[l])
             u_embedding[k, :] += u_update
             z_embedding[l, :] += z_update
             u_bias[k] += u_bias_update
