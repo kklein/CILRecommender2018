@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import sklearn
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import normalize
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
@@ -195,9 +196,9 @@ def compute_rsme(data, prediction):
     return np.sqrt(squared_error / len(validation_indices))
 
 def knn_smoothing(reconstruction, user_embeddings):
-    normalized_user_embeddings = sklearn.preprocessing.normalize(user_embeddings)
+    normalized_user_embeddings = normalize(user_embeddings)
     n_neighbors = 3
-    knn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors + 1)
+    knn = NearestNeighbors(n_neighbors=n_neighbors + 1)
     knn.fit(normalized_user_embeddings)
     distances, neighbors = knn.kneighbors(normalized_user_embeddings)
     distances = distances[:, 1:]
