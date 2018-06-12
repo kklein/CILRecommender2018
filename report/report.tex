@@ -1,0 +1,83 @@
+\documentclass[10pt,conference,compsocconf]{IEEEtran}
+
+%\usepackage{times}
+%\usepackage{balance}
+\usepackage{url}
+\usepackage{graphicx}	% For figure environment
+
+
+\begin{document}
+\title{Brilliant Title}
+
+\author{
+  Ben Hahn, Kevin Klein, Lorenz Kuhn\\
+  Department of Computer Science, ETH Zurich, Switzerland
+}
+
+\maketitle
+
+\begin{abstract}
+  A critical part of scientific discovery is the
+  communication of research findings to peers or the general public.
+  Mastery of the process of scientific communication improves the
+  visibility and impact of research. While this guide is a necessary
+  tool for learning how to write in a manner suitable for publication
+  at a scientific venue, it is by no means sufficient, on its own, to
+  make its reader an accomplished writer. We also describe the rules
+  for submission in the computational intelligence laboratory.
+  This guide should be a
+  starting point for further development of writing skills.
+\end{abstract}
+
+\section{Introduction}
+
+Many online businesses face the difficult yet crucial challenge of finding the most relevant products out of a enormous set of options for each of their users. Providing better recommendations, such as suggesting a movie on Netflix or a product on Amazon that a user might like, has been found to be linked to increased sales, an increase in consumer surplus and competitive advantages \cite{hinz2010impact}.
+Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. 
+One popular approach in collaborative filtering has been to use matrix factorization techniques. Here, users and items are represented as vectors in a shared, low-dimensional latent space intended to capture the hidden factors influencing the users' preferences \cite{koren2009matrix}. By calculating the inner product of a user embedding and an item embedding one can obtain the estimated preference of the user for the item. ((Summarize the matrix factorization work, that we use. Regularized svd, sgd, simon funk.))
+
+Recently, He et al.\ \cite{he2017neural} have employed deep neural networks to model the interaction between users and items, arguing that the linear interactions provided by matrix factorization techniques are overly restrictive.
+For the final result, recommendations produced by the neural network are combined with recommendations obtained from a simple matrix factorization component.
+
+((Summarize work on ensemble method we use.))
+
+The specific task we address is the following. Given a set of ratings $\mathcal{R}$, where $r_{ij} \in \mathcal{R}$ is the rating of user $i$ for movie $j$, $r_{ij} \in [1..5]$, $i \in [1..10000]$ and $j \in [1..1000]$ ((Does this formulation mean that all i,j in the ranges are in R?)). Out of the $10000 \times 1000$ possible ratings, we observe around 10\% ((Look this up)). The goal is to predict $\hat\mathcal{R}$, where $\hat r_{i'j'} \in \hat\mathcal{R} \rightarrow \hat r_{ij} \not\in \mathcal{R}$. ((Could also formulate this in natural language.))
+
+We draw on and improve previous work by proposing an approach which applies a state-of-the-art ensemble method to recommendations produced by both sophisticated matrix factorization techniques as well as neural network models.
+
+Our main contributions are thus the following: 
+\begin{enumerate}
+    \item ((Kevin's bit on MF techniques.))
+    \item Following the idea of pretraining neural networks, we use existing embeddings as input for our neural network We obtain embeddings using a number of different methods which are then used as input of a feed-forward neural network to model nonlinear interactions between the users and the items. 
+    \item ((Ben's bit on ensemble methods))
+\end{enumerate}
+
+
+
+\section{Models and Methods}
+\label{sec:methods}
+
+\subsection{Preprocessing}
+
+((Initialization methods))
+
+\subsection{Core}
+\subsubsection{Matrix Factorization}
+\subsubsection{Neural Network}
+\subsubsection{Ensemble Methods}
+
+\subsection{Postprocessing}
+((KNN-smoothing))
+
+\section{Results}
+\label{sec:results}
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+\section{Summary}
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{report}
+\end{document}
