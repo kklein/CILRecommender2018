@@ -8,7 +8,7 @@ import model_svd
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/reg_sgd100_scores.csv')
-N_EPOCHS = 100
+N_EPOCHS = 5
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.00001
@@ -40,6 +40,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             z_bias[l] += z_bias_update
         reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding,
                 total_average, u_bias, z_bias)
+        # Training rsme.
         rsme = utils.compute_rsme(data, reconstruction)
         print(rsme)
         if abs(last_rsme - rsme) < EPSILON:
@@ -64,13 +65,13 @@ def predict_by_sgd(data, approximation_rank=None, regularization=REGULARIZATION,
     return reconstruction, u_embedding
 
 def main():
-    # k = 10
+    k = 10
     # k = int(sys.argv[1])
     # regularization = REGULARIZATION
     # regularization = float(sys.argv[2])
-    ranks = [i for i in range(3, 40)]
+    # ranks = [i for i in range(3, 40)]
     regularizations = [0.005, 0.002, 0.02, 0.05, 0.2, 0.5]
-    k = np.random.choice(ranks)
+    # k = np.random.choice(ranks)
     regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
@@ -78,7 +79,7 @@ def main():
     svd_initiliazied = random.choice([True, False])
     if svd_initiliazied:
         initialization_string = 'svd'
-        imputed_data = utils.novel_init(data)
+        imputed_data = utils.novel_init(masked_data)
         u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sgd(masked_data, k, regularization, u_embeddings,
