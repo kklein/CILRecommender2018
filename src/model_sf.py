@@ -8,7 +8,7 @@ import model_svd
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sf_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/sf100_sgd_scores.csv')
-N_EPOCHS = 100
+N_EPOCHS = 5
 LEARNING_RATE = 0.001
 REG_EMB = 0.02
 REG_BIAS = 0.05
@@ -90,10 +90,11 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    svd_initiliazied = random.choice([True, False])
+    # svd_initiliazied = random.choice([True, False])
+    svd_initiliazied = False
     if svd_initiliazied:
         initialization_string = 'svd'
-        imputed_data = utils.novel_init(masked_data)
+        imputed_data = utils.impute_by_novel(masked_data)
         u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
@@ -104,12 +105,12 @@ def main():
                 predict_by_sf(masked_data, k, reg_emb, reg_bias)
 
     rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME before smoothing: %f' % rsme)
+    print('Validation RSME before smoothing: %f' % rsme)
     utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, '!S',
             initialization_string, SCORE_FILE)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
     rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME after smoothing: %f' % rsme)
+    print('Validation RSME after smoothing: %f' % rsme)
     utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, 'S',
             initialization_string, SCORE_FILE)
 

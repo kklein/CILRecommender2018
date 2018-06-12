@@ -65,7 +65,7 @@ def predict_by_sgd(data, approximation_rank=None, regularization=REGULARIZATION,
     return reconstruction, u_embedding
 
 def main():
-    k = 10
+    k = 20
     # k = int(sys.argv[1])
     # regularization = REGULARIZATION
     # regularization = float(sys.argv[2])
@@ -79,7 +79,7 @@ def main():
     svd_initiliazied = random.choice([True, False])
     if svd_initiliazied:
         initialization_string = 'svd'
-        imputed_data = utils.novel_init(masked_data)
+        imputed_data = utils.impute_by_novel(masked_data)
         u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sgd(masked_data, k, regularization, u_embeddings,

@@ -43,7 +43,7 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    imputed_data = utils.predict_by_avg(data, True)
+    imputed_data = utils.impute_by_avg(data, True)
     reconstruction, u_embeddings, _ =\
             predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
