@@ -32,7 +32,6 @@ def load_ratings(data_file=DATA_FILE):
     return ratings
 
 def ratings_to_matrix(ratings):
-    """Converts a list of ratings to a numpy matrix."""
     matrix_rows = USER_COUNT
     matrix_cols = ITEM_COUNT
     print("Building [%d x %d] rating matrix." % (matrix_rows, matrix_cols))
@@ -167,12 +166,13 @@ def impute_by_novel(data):
             data[i, j] = d * m[j] + (1 - d) * u[i]
     return data
 
-def compute_rsme(data, prediction):
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+def compute_rsme(data, prediction, indices=None):
+    if indices is None:
+        indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     squared_error = 0
-    for i, j in validation_indices:
+    for i, j in indices:
         squared_error += (data[i][j] - prediction[i][j]) ** 2
-    return np.sqrt(squared_error / len(validation_indices))
+    return np.sqrt(squared_error / len(indices))
 
 def knn_smoothing(reconstruction, user_embeddings):
     normalized_user_embeddings = normalize(user_embeddings)
