@@ -4,9 +4,9 @@ import numpy as np
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/submission_svd.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd15_scores.csv')
-N_EPOCHS = 15
+        'data/submission_svd30_7.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd30_scores.csv')
+N_EPOCHS = 3
 
 def write_svd_score(score, k, take_bias):
     with open(SCORE_FILE, 'a+') as file:
@@ -25,33 +25,36 @@ def get_embeddings(imputed_data, approximation_rank):
     z_embeddings = z_embeddings.T
     return u_embeddings, z_embeddings
 
-def predict_by_svd(data, imputed_data, approximation_rank,):
+def predict_by_svd(data, imputed_data, approximation_rank):
     reconstruction = imputed_data
     for epoch_index in range(N_EPOCHS):
         u_embeddings, z_embeddings =\
-                get_embeddings(imputed_data, approximation_rank)
-        reconstruction = np.matmul(u_embeddings, z_embeddings)
-        if epoch_index < N_EPOCHS - 1:
-            reconstruction = utils.impute(data, reconstruction)
-    return reconstruction
+                get_embeddings(reconstruction, approximation_rank)
+        reconstruction = np.matmul(u_embeddings, z_embeddings.T)
+        utils.ampute_reconstruction(reconstruction, data)
+    reconstruction = utils.clip(reconstruction)
+    return reconstruction, u_embeddings, z_embeddings
 
 def main():
-    ranks = [i for i in range(3, 30)]
+    ranks = [i for i in range(3, 25)]
     k = np.random.choice(ranks)
-    take_bias = random.choice([True, False])
+    # k = 4
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    if take_bias:
-        imputed_data = utils.predict_bias(data)
-    else:
-        imputed_data = utils.predict_by_avg(data, True)
-    reconstruction = predict_by_svd(masked_data, imputed_data, k)
-    reconstruction = utils.clip(reconstruction)
+    imputed_data = np.copy(masked_data)
+    utils.impute_by_avg(imputed_data, True)
+    reconstruction, u_embeddings, _ =\
+            predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME: %f' % rsme)
-    write_svd_score(rsme, k, take_bias)
+    print('RSME before smoothing: %f' % rsme)
+    write_svd_score(rsme, k, False)
+    reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
+    rsme = utils.compute_rsme(data, reconstruction)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    print('RSME after smoothing: %f' % rsme)
+    write_svd_score(rsme, k, True)
+    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()

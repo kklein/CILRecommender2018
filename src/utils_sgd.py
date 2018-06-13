@@ -1,9 +1,11 @@
 import numpy as np
 import utils
 
-def write_sgd_score(score, k, regularization, score_file):
+def write_sgd_score(score, k, reg_emb, reg_bias, smoothed,
+        initialization_string, score_file):
     with open(score_file, 'a+') as file:
-        file.write('%d, %f, %f\n' % (k, regularization, score))
+        file.write('%d, %f, %f, %s, %s, %f\n' % (k, reg_emb, reg_bias,
+                smoothed, initialization_string, score))
 
 def get_initialized_biases(data):
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)

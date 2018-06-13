@@ -1,7 +1,7 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import sklearn
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import normalize
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
@@ -14,12 +14,8 @@ SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
             'data/sampleSubmission.csv')
 ITEM_COUNT = 1000
 USER_COUNT = 10000
-
-# https://stackoverflow.com/questions/42746248/numpy-linalg-norm-behaving-oddly-wrongly
-def safe_norm(x):
-    # Add small constant to avoid division by (almost) 0.
-    divisor = np.max(x) + 0.01
-    return np.linalg.norm(x / divisor) * divisor
+WEIGHT_KNN = 0.001
+N_NEIGHBORS = 3
 
 def load_ratings(data_file = DATA_FILE):
     """Loads the rating data from the specified file.
@@ -45,15 +41,7 @@ def load_ratings(data_file = DATA_FILE):
             ratings.append((row - 1, col - 1, rating))
     return ratings
 
-def mask_validation(data):
-    masked_data = np.copy(data)
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
-    for row_index, col_index in validation_indices:
-        masked_data[row_index][col_index] = 0
-    return masked_data
-
 def ratings_to_matrix(ratings):
-    """Converts a list of ratings to a numpy matrix."""
     matrix_rows = USER_COUNT
     matrix_cols = ITEM_COUNT
     print("Building [%d x %d] rating matrix." % (matrix_rows, matrix_cols))
@@ -63,11 +51,12 @@ def ratings_to_matrix(ratings):
     print("Finished building rating matrix.")
     return matrix
 
-def impute(data, reconstruction):
-    observed_indeces = get_observed_indeces(data)
-    for row_index, col_index in observed_indeces:
-        reconstruction[row_index][col_index] = data[row_index][col_index]
-    return reconstruction
+def mask_validation(data):
+    masked_data = np.copy(data)
+    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    for row_index, col_index in validation_indices:
+        masked_data[row_index][col_index] = 0
+    return masked_data
 
 def get_validation_indices():
     validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
@@ -125,7 +114,12 @@ def clip(data):
     data[data < 1] = 1
     return data
 
-def predict_by_avg(data, by_row):
+def ampute_reconstruction(reconstruction, data):
+    observed_indeces = get_observed_indeces(data)
+    for row_index, col_index in observed_indeces:
+        reconstruction[row_index][col_index] = data[row_index][col_index]
+
+def impute_by_avg(data, by_row):
     data = data.T if by_row else data
     for row in data:
         empty = (row == 0)
@@ -133,7 +127,25 @@ def predict_by_avg(data, by_row):
         row[empty] = row_sum / np.count_nonzero(row)
     return data.T if by_row else data
 
-def novel_init(data):
+def impute_by_bias(data):
+    total_average = np.mean(data[np.nonzero(data)])
+    row_biases = np.zeros(data.shape[0])
+    col_biases = np.zeros(data.shape[1])
+    for row_index in range(data.shape[0]):
+        row_biases[row_index] = np.sum(data[row_index]) / \
+                np.count_nonzero(data[row_index]) - total_average
+    for col_index in range(data.shape[1]):
+        col_biases[col_index] = np.sum(data[:][col_index]) / \
+                np.count_nonzero(data[:][col_index]) - total_average
+    for row_index in range(data.shape[0]):
+        for col_index in range(data.shape[1]):
+            if data[row_index, col_index] == 0:
+                new_value = total_average + \
+                        row_biases[row_index] + col_biases[col_index]
+                data[row_index, col_index] = new_value
+    return data
+
+def impute_by_novel(data):
     global_average = np.sum(data) / np.count_nonzero(data)
     global_variance = np.var(data[data != 0])
 
@@ -162,49 +174,16 @@ def novel_init(data):
         for j in range(data.shape[1]):
             d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
             data[i, j] = d * m[j] + (1 - d) * u[i]
-
     return data
 
-def predict_bias(data):
-    total_average = np.mean(data[np.nonzero(data)])
-    row_biases = np.zeros(data.shape[0])
-    col_biases = np.zeros(data.shape[1])
-
-    for row_index in range(data.shape[0]):
-        row_biases[row_index] = np.sum(data[row_index]) / \
-                np.count_nonzero(data[row_index]) - total_average
-
-    # plt.hist(row_biases)
-    # plt.show()
-
-    for col_index in range(data.shape[1]):
-        col_biases[col_index] = np.sum(data[:][col_index]) / \
-                                np.count_nonzero(data[:][col_index]) - total_average
-
-    # plt.hist(col_biases)
-    # plt.show()
-
-    counter = 0
-    values = np.zeros(10000000)
-
-    for row_index in range(data.shape[0]):
-        for col_index in range(data.shape[1]):
-            if data[row_index, col_index] == 0:
-                new_value = total_average + \
-                        row_biases[row_index] + col_biases[col_index]
-                data[row_index, col_index] = new_value
-                values[counter] = new_value
-                counter += 1
-    # plt.hist(values)
-    # plt.show()
-    return data
-
-def compute_rsme(data, prediction):
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+def compute_rsme(data, prediction, indices=None):
+    if indices is None:
+        indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     squared_error = 0
-    for i, j in validation_indices:
+    for i, j in indices:
         squared_error += (data[i][j] - prediction[i][j]) ** 2
-    return np.sqrt(squared_error / len(validation_indices))
+    return np.sqrt(squared_error / len(indices))
+
 
 def compute_fold_rmse(data, prediction, validation_indices):
     # print("validation_indices: ", validation_indices)
@@ -213,10 +192,10 @@ def compute_fold_rmse(data, prediction, validation_indices):
         squared_error += (data[i][j] - prediction[i][j]) ** 2
     return np.sqrt(squared_error / len(validation_indices))
 
-def knn_smoothing(data, user_embeddings):
-    normalized_user_embeddings = sklearn.preprocessing.normalize(user_embeddings)
-    n_neighbors = 3
-    knn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors + 1)
+
+def knn_smoothing(reconstruction, user_embeddings):
+    normalized_user_embeddings = normalize(user_embeddings)
+    knn = NearestNeighbors(n_neighbors=N_NEIGHBORS + 1)
     knn.fit(normalized_user_embeddings)
     distances, neighbors = knn.kneighbors(normalized_user_embeddings)
     distances = distances[:, 1:]
@@ -225,19 +204,20 @@ def knn_smoothing(data, user_embeddings):
     ones = np.ones(distances.shape)
     similarities = ones - distances
     weights = np.square(np.square(similarities))
-    smoothed_data = np.zeros(data.shape)
-    aggregated_neighbor_ratings = np.zeros(data.shape)
+    smoothed_data = np.zeros(reconstruction.shape)
+    aggregated_neighbor_ratings = np.zeros(reconstruction.shape)
 
-    for i in range(data.shape[0]):
+    for i in range(reconstruction.shape[0]):
         stacked_ratings = []
         for neighbor in neighbors[i]:
-            stacked_ratings.append(data[neighbor])
+            stacked_ratings.append(reconstruction[neighbor])
         stacked_ratings = np.asarray(stacked_ratings)
-        aggregated_neighbor_ratings[i] = np.matmul(weights[i], stacked_ratings) / sum(weights[i])
+        aggregated_neighbor_ratings[i] =\
+                np.matmul(weights[i], stacked_ratings) / sum(weights[i])
 
-    weight_knn = 0.01
-    for i in range(data.shape[0]):
-        smoothed_data[i] = (1 - weight_knn) * data[i] + weight_knn * aggregated_neighbor_ratings[i]
+    for i in range(reconstruction.shape[0]):
+        smoothed_data[i] = (1 - WEIGHT_KNN) * reconstruction[i] + WEIGHT_KNN *\
+                aggregated_neighbor_ratings[i]
 
     smoothed_data = clip(smoothed_data)
     return smoothed_data
