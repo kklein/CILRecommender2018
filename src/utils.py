@@ -103,11 +103,10 @@ def clip(data):
     data[data < 1] = 1
     return data
 
-def impute(data, reconstruction):
+def ampute_reconstruction(reconstruction, data):
     observed_indeces = get_observed_indeces(data)
     for row_index, col_index in observed_indeces:
         reconstruction[row_index][col_index] = data[row_index][col_index]
-    return reconstruction
 
 def impute_by_avg(data, by_row):
     data = data.T if by_row else data

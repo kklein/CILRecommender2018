@@ -31,14 +31,14 @@ def predict_by_svd(data, imputed_data, approximation_rank):
         u_embeddings, z_embeddings =\
                 get_embeddings(reconstruction, approximation_rank)
         reconstruction = np.matmul(u_embeddings, z_embeddings.T)
-        reconstruction = utils.impute(data, reconstruction)
+        utils.ampute_reconstruction(reconstruction, data)
     reconstruction = utils.clip(reconstruction)
     return reconstruction, u_embeddings, z_embeddings
 
 def main():
-    # ranks = [i for i in range(3, 25)]
-    # k = np.random.choice(ranks)
-    k = 10
+    ranks = [i for i in range(3, 25)]
+    k = np.random.choice(ranks)
+    # k = 4
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
@@ -48,12 +48,12 @@ def main():
             predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME before smoothing: %f' % rsme)
-    # write_svd_score(rsme, k, False)
+    write_svd_score(rsme, k, False)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
     rsme = utils.compute_rsme(data, reconstruction)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
     print('RSME after smoothing: %f' % rsme)
-    # write_svd_score(rsme, k, True)
+    write_svd_score(rsme, k, True)
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
