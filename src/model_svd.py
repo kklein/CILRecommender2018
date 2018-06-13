@@ -25,25 +25,25 @@ def get_embeddings(imputed_data, approximation_rank):
     z_embeddings = z_embeddings.T
     return u_embeddings, z_embeddings
 
-def predict_by_svd(data, imputed_data, approximation_rank,):
+def predict_by_svd(data, imputed_data, approximation_rank):
     reconstruction = imputed_data
     for epoch_index in range(N_EPOCHS):
         u_embeddings, z_embeddings =\
-                get_embeddings(imputed_data, approximation_rank)
+                get_embeddings(reconstruction, approximation_rank)
         reconstruction = np.matmul(u_embeddings, z_embeddings.T)
-        if epoch_index < N_EPOCHS - 1:
-            reconstruction = utils.impute(data, reconstruction)
+        reconstruction = utils.impute(data, reconstruction)
     reconstruction = utils.clip(reconstruction)
     return reconstruction, u_embeddings, z_embeddings
 
 def main():
     # ranks = [i for i in range(3, 25)]
     # k = np.random.choice(ranks)
-    k = 4
+    k = 10
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    imputed_data = utils.impute_by_avg(masked_data, True)
+    imputed_data = np.copy(masked_data)
+    utils.impute_by_avg(imputed_data, True)
     reconstruction, u_embeddings, _ =\
             predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
