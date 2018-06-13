@@ -37,8 +37,8 @@ def load_ratings(data_file = DATA_FILE):
             key, value_string = line.rstrip().split(",")
             rating = float(value_string)
             row_string, col_string = key.rstrip().split("_")
-            row = int(float(row_string[1:]))
-            col = int(float(col_string[1:]))
+            row = int(row_string[1:])
+            col = int(col_string[1:])
             if rating < 1 or rating > 5:
                 raise ValueError("Found illegal rating value [%d]." % rating)
 
