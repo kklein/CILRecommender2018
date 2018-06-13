@@ -94,7 +94,8 @@ def main():
     svd_initiliazied = False
     if svd_initiliazied:
         initialization_string = 'svd'
-        imputed_data = utils.impute_by_novel(masked_data)
+        imputed_data = np.copy(masked_data)
+        utils.impute_by_novel(imputed_data)
         u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
