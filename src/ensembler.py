@@ -7,6 +7,7 @@ from sklearn.neural_network import MLPRegressor
 
 import utils
 import model_reg_sgd
+import model_svd
 
 # This file is meant as a template. Feel free to change, replace or copy.
 # TODO(b-hahn): Define and use meaningful naming scheme.
@@ -104,7 +105,7 @@ def bagging(n):
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
 
-
+    predictor = 'svd'
     k = 3  # TODO: remove for real runs
     predictions = []
     sampled_data = np.zeros_like(masked_data)
@@ -117,7 +118,12 @@ def bagging(n):
             # keep track of which user (i.e. row) is added. Later, average ratings of duplicates of each user
             sampled_users[r] = random_row
             sampled_data[r, :] = masked_data[random_row, :]
-        sampled_prediction, _ = model_reg_sgd.predict_by_sgd(sampled_data, k, regularization)
+        if predictor == 'reg_sgd':
+            sampled_prediction, _ = model_reg_sgd.predict_by_sgd(sampled_data, k, regularization)
+        elif predictor == 'svd':
+            imputed_data = np.copy(sampled_data)
+            utils.impute_by_avg(imputed_data, True)
+            sampled_prediction, _, _ = model_svd.predict_by_svd(sampled_data, imputed_data, k)
         # sort predictions by user and group duplicates
         # then calculate mean predictions for duplicates.
         prediction = np.zeros_like(masked_data) * np.nan
@@ -134,14 +140,18 @@ def bagging(n):
             if np.sum(np.isnan(prediction[r, :])) > 0:
                 nan_count += 1
         print("nan_count:", nan_count)
-        np.nan_to_num(prediction, copy=False)
+        # np.nan_to_num(prediction, copy=False)
         print(prediction.shape, np.sum(np.isnan(prediction)))
         predictions.append(prediction)
 
     print("Finished {} runs of bagging...calculating mean of predictions".format(n))
     #    print(np.unique(np.concatenate(predictions, axis=0), axis=0).shape[0])
     print(np.sum(np.count_nonzero(np.sum(predictions, axis=0), axis=1) > 0))
-    compute_mean_predictions(predictions)
+    mean_predictions = compute_mean_predictions(predictions)
+    rmse = utils.compute_rsme(data, mean_predictions)
+    print("mean_predictions rmse:", rmse)
+    utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
+    print("Predictions saved in {}".format(SUBMISSION_FILE))
 
 
 def load_predictions_from_files():
@@ -163,14 +173,15 @@ def compute_mean_predictions(all_ratings):
     for r in all_ratings:
         print("r:", r[2, :15])
     reconstruction = np.nanmean(np.array(all_ratings), axis=0)
-    print("reconstruction.shape:", reconstruction.shape)
-    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
-    print("Predictions saved in {}".format(SUBMISSION_FILE))
+    # TODO(ben): set remaining NaNs to a sensible value, e.g. row mean/ column mean
+    np.nan_to_num(reconstruction, copy=False)
+    reconstruction = utils.impute_by_avg(reconstruction, by_row=True)
+    return reconstruction
 
 
 def main():
     # compute_mean_predictions(load_predictions_from_files())
-    bagging(6)
+    bagging(3)
 
 
 if __name__ == '__main__':
