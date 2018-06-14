@@ -12,7 +12,7 @@ import model_svd
 # This file is meant as a template. Feel free to change, replace or copy.
 # TODO(b-hahn): Define and use meaningful naming scheme.
 SUBMISSION_FILE = os.path.join(
-    utils.ROOT_DIR, 'data/ensembles/ensemble' +
+    utils.ROOT_DIR, 'data/ensemble' +
     datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 
 
