@@ -6,7 +6,7 @@ import utils
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_svd30_7.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/svd30_scores.csv')
-N_EPOCHS = 3
+N_EPOCHS = 20
 
 def write_svd_score(score, k, take_bias):
     with open(SCORE_FILE, 'a+') as file:
