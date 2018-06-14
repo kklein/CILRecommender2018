@@ -117,14 +117,19 @@ def bagging(n):
             # keep track of which user (i.e. row) is added. Later, average ratings of duplicates of each user
             sampled_users[r] = random_row
             sampled_data[r, :] = masked_data[random_row, :]
-        sampled_prediction = model_reg_sgd.predict_by_sgd(sampled_data, k, regularization)
+        sampled_prediction, _ = model_reg_sgd.predict_by_sgd(sampled_data, k, regularization)
         # sort predictions by user and group duplicates
         # then calculate mean predictions for duplicates.
-        prediction = np.zeros_like(masked_data)
+        prediction = np.zeros_like(masked_data) * np.nan
         nan_count = 0
         for r in range(prediction.shape[0]):
             # mean of rows in sampled_prediction where entries in sampled_users equal r
-            prediction[r, :] = np.mean(sampled_prediction[np.argwhere(sampled_users == r), :], axis=0)
+            # TODO: why are there so many NaNs here?
+            duplicate_user_predictions = sampled_prediction[np.argwhere(sampled_users == r), :]
+            if duplicate_user_predictions.shape[0] > 0:
+                # print("For row {} calculating mean of {} duplicates".format(r, duplicate_user_predictions.shape))
+                # print(duplicate_user_predictions[:, 0, :10])
+                prediction[r, :] = np.mean(duplicate_user_predictions, axis=0)
             # print("NaNs in row {}: {}".format(r, np.sum(np.isnan(prediction[r, :]))))
             if np.sum(np.isnan(prediction[r, :])) > 0:
                 nan_count += 1
@@ -134,6 +139,8 @@ def bagging(n):
         predictions.append(prediction)
 
     print("Finished {} runs of bagging...calculating mean of predictions".format(n))
+    #    print(np.unique(np.concatenate(predictions, axis=0), axis=0).shape[0])
+    print(np.sum(np.count_nonzero(np.sum(predictions, axis=0), axis=1) > 0))
     compute_mean_predictions(predictions)
 
 
@@ -151,14 +158,19 @@ def load_predictions_from_files():
 
 
 def compute_mean_predictions(all_ratings):
-    reconstruction = np.mean(np.array(all_ratings), axis=0)
+    if np.sum(np.isnan(all_ratings)) > 0:
+        print("Warning: NaNs enountered in compute_mean_predictions")
+    for r in all_ratings:
+        print("r:", r[2, :15])
+    reconstruction = np.nanmean(np.array(all_ratings), axis=0)
+    print("reconstruction.shape:", reconstruction.shape)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
     print("Predictions saved in {}".format(SUBMISSION_FILE))
 
 
 def main():
     # compute_mean_predictions(load_predictions_from_files())
-    bagging(3)
+    bagging(6)
 
 
 if __name__ == '__main__':
