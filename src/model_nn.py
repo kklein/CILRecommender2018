@@ -93,6 +93,7 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         if embedding_type == "nmf":
             model = NMF(n_components=embedding_dimension, init='random',
                         random_state=0)
+            data = utils.clip(data)
         elif embedding_type == "fa":
             model = FactorAnalysis(n_components=embedding_dimension)
 
