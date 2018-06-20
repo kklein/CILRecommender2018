@@ -4,6 +4,7 @@
 %\usepackage{balance}
 \usepackage{url}
 \usepackage{graphicx}	% For figure environment
+\usepackage{algorithmic}
 
 
 \begin{document}
@@ -70,6 +71,24 @@ The specific task we address is the following. Given a set of ratings $\mathcal{
 
 \subsection{Postprocessing}
 ((KNN-smoothing))
+
+\subsection{temp}
+\subsubsection{Iterated SVD}
+\begin{algorithmic}
+	\STATE $R$: Ratings matrix with holes, $k$ fixed rank
+	\STATE $M \leftarrow R$
+	\STATE Impute $M$ by initialization
+    \FOR {$i \in \{1 \dots n_{epochs}\}$} 
+    	\STATE ($U, \Sigma, D) \leftarrow SVD(M)$
+    	\STATE $U_{(k)} \leftarrow U[:, 1:k]$
+    	\STATE $\Sigma_{(k)} \leftarrow \Sigma[1:k, 1:k]$
+    	\STATE $D_{(k)} \leftarrow D[:, 1:k]$
+    	\STATE $M \leftarrow R$
+    	\STATE Impute $M$ by $U_{(k)} \Sigma_{(k)} D_{(k)}^T$
+    \ENDFOR
+    \RETURN $M$
+\end{algorithmic}
+
 
 \section{Results}
 \label{sec:results}
