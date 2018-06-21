@@ -5,6 +5,7 @@
 \usepackage{url}
 \usepackage{graphicx}	% For figure environment
 \usepackage{algorithmic}
+\usepackage{amsmath}
 
 
 \begin{document}
@@ -67,6 +68,40 @@ The specific task we address is the following. Given a set of ratings $\mathcal{
 \subsection{Core}
 \subsubsection{Matrix Factorization}
 \subsubsection{Neural Network}
+In addition to the models based on matrix factorization techniques, our system employs a number of predictors based on neural networks. Firstly, we follow the approach proposed in Neural Collaborative Filtering \cite{he2017neural}, where embedding vectors for users and items are learned from random initialisations which are then fed into a feedforward neural network. The model parameters are then trained using standard backpropagation methods to minimise the squared loss on the observed ratings. 
+Secondly, we propose the use of existing embedding vectors obtained through other methods as input to a neural network regressor. Rather than having to learn the embedding vectors, this approach exploits precomputed embeddings while being able to model complex, nonlinear interactions  between the users and the items. 
+a number of neural network models are trained to predict ratings given user and item embeddings obtained through a number of different dimensionality reduction techniques: Locally Linear Embeddings \cite{roweis2000nonlinear}, Non-Negative Matrix Factorisation \cite{cichocki2009fast}, standard SVD and iterated SVD as presented above.
+
+In particular the neural network model used is the following:
+\begin{equation}
+\begin{aligned}
+    \bf{z_1} &= \phi_1(\bf{e_i}, \bf{e_u}) = [\bf{e_i}, \bf{e_u}]\\
+    \bf{z_2} &= a_2(\bf{W_2}^T \bf{z_1} + b_2) \\
+    &\dots \\
+    \bf{z_L} &= a_{L - 1 }(\bf{W_{L}}^T \bf{z_{L - 1}} + b_L) \\
+    \hat y_{ui} &= \sigma(\bf{h}^T \bf{z_L})
+\end{aligned}
+\end{equation}
+
+where $a_i,\bf{W_i}, \bf{b_i}$, denote the i-th layer's activation function, weights and bias respectively. With $\bf{e_i}$ and $\bf{e_u}$ we denote the embedding vectors for the users and items respectively. We use the rectifier (ReLU) activation function, which has been found to frequently yield superior results as compared to the traditionally used sigmoid and tanh functions \cite{glorot2011deep}.
+
+
+\begin{table}[]
+\centering
+\caption{Validation Results of Neural Network Models}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+     & Random Init & SVD & Iterated SVD & LLE & NMF \\ \hline
+RMSE & 1.117           & 1.006   & 1.005           & 1.08   & 1.0   \\ \hline
+\end{tabular}
+\end{table}
+
+
+
+
+((Write up results))
+
 \subsubsection{Ensemble Methods}
 
 \subsection{Postprocessing}
@@ -103,3 +138,4 @@ The specific task we address is the following. Given a set of ratings $\mathcal{
 \bibliographystyle{IEEEtran}
 \bibliography{report}
 \end{document}
+
