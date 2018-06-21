@@ -6,6 +6,7 @@
 \usepackage{graphicx}	% For figure environment
 \usepackage{algorithmic}
 \usepackage{amsmath}
+\usepackage{amssymb}
 
 
 \begin{document}
@@ -60,10 +61,18 @@ Our main contributions are thus the following:
 
 \subsection{Task}
 
-The specific task we address is the following. Given a set of ratings $\mathcal{R}$, where $r_{ij} \in \mathcal{R}$ is the rating of user $i$ for movie $j$, $r_{ij} \in [1 \dots 5]$, $i \in [1 \dots 10000]$ and $j \in [1 \dots 1000]$ ((Does this formulation mean that all i,j in the ranges are in R?)). Out of the $10000 \times 1000$ possible ratings, we observe around 10\% ((Look this up)). The goal is to predict $\hat\mathcal{R}$, where $\hat r_{i'j'} \in \hat\mathcal{R} \rightarrow \hat r_{ij} \not\in \mathcal{R}$. ((@Ben: Please extend this with some of the data analysis results that you got.))
+The specific task we address is the following. Given a set of ratings $\mathcal{R}$, where $r_{ij} \in \mathcal{R}$ is the rating of user $i$ for movie $j$, $r_{ij} \in [1 \dots 5]$, $i \in [1 \dots 10000]$ and $j \in [1 \dots 1000]$ ((Does this formulation mean that all i,j in the ranges are in R?)). Out of the $10000 \times 1000$ possible ratings, we observe around 10\% ((Look this up)). The goal is to predict $\hat \mathcal{R} \textbox{where}  \hat r_{i'j'} \in \hat \mathcal{R} \rightarrow \hat r_{ij} \not\in \mathcal{R}$. ((@Ben: Please extend this with some of the data analysis results that you got.))
+
+The goal of this task is to minimize the Root Mean Squared Error (RMSE) given by:
+\begin{equation}
+\textbox{RMSE} = \sqrt{\frac{1}{|T|}\sum_{(u, i) \in T} (y_{u,i} -\hat y_{u,i})^2}    
+\end{equation}
+
+where $T$ is a test set of ratings in which $y_{u, i}$ is the rating of user $u$ for movie $i$ and $\hat y_{u,i}$ the corresponding prediction. 
+
 \subsection{Preprocessing}
 
-((Initialization methods))
+((Initialization methods @kuhnl))
 
 \subsection{Core}
 \subsubsection{Matrix Factorization}
@@ -89,7 +98,7 @@ where $a_i,\bf{W_i}, \bf{b_i}$, denote the i-th layer's activation function, wei
 \begin{table}[]
 \centering
 \caption{Validation Results of Neural Network Models}
-\label{my-label}
+\label{table:neural_net_models}
 \begin{tabular}{|l|l|l|l|l|l|}
 \hline
      & Random Init & SVD & Iterated SVD & LLE & NMF \\ \hline
@@ -97,10 +106,11 @@ RMSE & 1.117           & 1.006   & 1.005           & 1.08   & 1.0   \\ \hline
 \end{tabular}
 \end{table}
 
+Using grid search in the, we find hyperparameters yielding the best results on the validation set (see table \ref{table:neural_net_models}). 
+With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.((Into how much detail do we need to go here?))
 
 
 
-((Write up results))
 
 \subsubsection{Ensemble Methods}
 
