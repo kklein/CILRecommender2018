@@ -154,8 +154,8 @@ def impute_by_novel(data):
         r = diff[user_ratings != 0]
         k = np.var(r) / global_variance
         u[i] = (global_average * k + sum(r)) / (k + np.count_nonzero(r))
-        if u[i] < -1 or u[i] > 6:
-            print(u[i])
+        # if u[i] < -1 or u[i] > 6:
+        #     print(u[i])
 
     w = 10.0
     user_counts = np.count_nonzero(data, axis=1)
@@ -165,7 +165,7 @@ def impute_by_novel(data):
             d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
             data[i, j] = d * m[j] + (1 - d) * u[i]
 
-    print(data[:10])
+    # print(data[:10])
     return data
 
 def compute_rsme(data, prediction, indices=None):
