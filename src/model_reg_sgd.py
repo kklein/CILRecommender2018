@@ -47,7 +47,7 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         if abs(last_rsme - rsme) < EPSILON:
             break
         last_rsme = rsme
-        return reconstruction
+    return reconstruction
 
 def predict_by_sgd(masked_data, approximation_rank=None, regularization=REGULARIZATION,
         u_embedding=None, z_embedding=None, n_epochs=N_EPOCHS):
