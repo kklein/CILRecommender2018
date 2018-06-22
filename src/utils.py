@@ -148,10 +148,11 @@ def impute_by_novel(data):
                (k + np.count_nonzero(ratings))
 
     u = np.zeros((data.shape[0],))
-
     for i in range(data.shape[0]):
         user_ratings = data[i]
         diff = m - user_ratings
+        # TODO(heylook): This looks into _differences_ that are non-zero. I think this is different from looking into
+        # non-zero ratings.
         r = diff[user_ratings != 0]
         k = np.var(r) / global_variance
         u[i] = (global_average * k + sum(r)) / (k + np.count_nonzero(r))

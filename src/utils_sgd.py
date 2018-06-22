@@ -38,7 +38,7 @@ def get_initialized_embeddings(approximation_rank, u_rows, z_rows):
             np.float128)
     return u_embedding, z_embedding
 
-def reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias):
+def reconstruct(u_embedding, z_embedding, u_bias, z_bias, total_average=0):
     # Reshape arrays in order to allow for broadcasting on matrix.
     u_bias = np.reshape(u_bias, (u_bias.shape[0], 1))
     z_bias = np.reshape(z_bias, (1, z_bias.shape[0]))
