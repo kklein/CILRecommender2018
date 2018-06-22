@@ -60,26 +60,21 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
 
             if np.isnan(u_embedding).any() or np.isnan(z_embedding).any():
                 raise ValueError('Found NaN in embedding after feature %d.' % feature_index)
+    return reconstruction
 
 # sf stands for Simon Funk.
 def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
         reg_bias=REG_BIAS, u_embedding=None, z_embedding=None,
         n_epochs=N_EPOCHS):
     np.random.seed(42)
+    u_bias = np.zeros(u_embedding.shape[0])
+    z_bias = np.zeros(z_embedding.shape[0])
     if u_embedding is None and z_embedding is None:
         print("Initialize embeddings.")
         u_embedding, z_embedding = utils_sgd.get_initialized_embeddings(
                 approximation_rank, data.shape[0], data.shape[1])
-    if u_embedding is None or z_embedding is None:
-        raise ValueError("embedding is None!")
-    # TODO(kkleindev): Rethink bias initialization.
-    # u_bias, z_bias = utils_sgd.get_initialized_biases(data)
-    u_bias = np.zeros(u_embedding.shape[0])
-    z_bias = np.zeros(z_embedding.shape[0])
-    learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
+    reconstruction = learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reg_emb, reg_bias)
-    total_average = np.mean(data[np.nonzero(data)])
-    reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, u_bias, z_bias)
     utils.clip(reconstruction)
     return reconstruction, u_embedding
 
@@ -98,8 +93,8 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    svd_initiliazied = random.choice([True, False])
-    # svd_initiliazied = True
+    # svd_initiliazied = random.choice([True, False])
+    svd_initiliazied = True
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
