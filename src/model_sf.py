@@ -32,7 +32,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                 temp_z_emb = z_embedding[l, feature_index]
 
                 # TODO(kkleindev): Rename.
-                aux = u_bias[k] + z_bias[l] - total_average
+                # aux = u_bias[k] + z_bias[l] - total_average
 
                 residual = data[k, l] - u_bias[k] - z_bias[l] - np.dot(
                         u_embedding[k, : feature_index + 1],
@@ -42,9 +42,9 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                 u_embedding[k, feature_index] += LEARNING_RATE * residual * temp_z_emb
                 z_embedding[l, feature_index] *= (1 - LEARNING_RATE * reg_emb)
                 z_embedding[l, feature_index] += LEARNING_RATE * residual * temp_u_emb
-                u_bias[k] -= LEARNING_RATE * reg_bias * aux
+                u_bias[k] -= LEARNING_RATE * reg_bias * u_bias[k]
                 u_bias[k] += LEARNING_RATE * residual
-                z_bias[l] -= LEARNING_RATE * reg_bias * aux
+                z_bias[l] -= LEARNING_RATE * reg_bias * z_bias[l]
                 z_bias[l] += LEARNING_RATE * residual
 
             reconstruction = utils_sgd.reconstruct(
@@ -52,7 +52,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                     z_embedding[:, :feature_index + 1], u_bias,
                     z_bias)
             # residual_data = data - reconstruction
-            rsme = utils.compute_rsme(data, reconstruction)
+            rsme = utils.compute_rsme(data, reconstruction, utils.get_observed_indeces(data))
             print(rsme)
             if abs(last_rsme - rsme) < EPSILON:
                 break
@@ -60,6 +60,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
 
             if np.isnan(u_embedding).any() or np.isnan(z_embedding).any():
                 raise ValueError('Found NaN in embedding after feature %d.' % feature_index)
+    return reconstruction
 
 # sf stands for Simon Funk.
 def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
@@ -70,16 +71,10 @@ def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
         print("Initialize embeddings.")
         u_embedding, z_embedding = utils_sgd.get_initialized_embeddings(
                 approximation_rank, data.shape[0], data.shape[1])
-    if u_embedding is None or z_embedding is None:
-        raise ValueError("embedding is None!")
-    # TODO(kkleindev): Rethink bias initialization.
-    # u_bias, z_bias = utils_sgd.get_initialized_biases(data)
     u_bias = np.zeros(u_embedding.shape[0])
     z_bias = np.zeros(z_embedding.shape[0])
-    learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
+    reconstruction = learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reg_emb, reg_bias)
-    total_average = np.mean(data[np.nonzero(data)])
-    reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, u_bias, z_bias)
     utils.clip(reconstruction)
     return reconstruction, u_embedding
 
@@ -98,8 +93,8 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    svd_initiliazied = random.choice([True, False])
-    # svd_initiliazied = True
+    # svd_initiliazied = random.choice([True, False])
+    svd_initiliazied = True
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
