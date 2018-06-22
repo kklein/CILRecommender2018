@@ -24,8 +24,6 @@ def main():
     validation_indices.sort(key=lambda x: (x[0], x[1]))
     write_indices_to_file(training_indices, utils.TRAINING_FILE_NAME)
     if NUM_VALIDATION_SETS == 2:
-        print("len(validation_indices): {}, np.floor(len(validation_indices) / 2): {}".format(
-            len(validation_indices), np.floor(len(validation_indices) / 2)))
         validation_indices_first = validation_indices[:int(np.floor(len(validation_indices) / 2))]
         validation_indices_second = validation_indices[int(np.floor(len(validation_indices) / 2)):]
         write_indices_to_file(validation_indices_first, utils.VALIDATION_FILE_NAME.split(".csv")[0] + "_first.csv")
