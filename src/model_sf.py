@@ -67,12 +67,12 @@ def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
         reg_bias=REG_BIAS, u_embedding=None, z_embedding=None,
         n_epochs=N_EPOCHS):
     np.random.seed(42)
-    u_bias = np.zeros(u_embedding.shape[0])
-    z_bias = np.zeros(z_embedding.shape[0])
     if u_embedding is None and z_embedding is None:
         print("Initialize embeddings.")
         u_embedding, z_embedding = utils_sgd.get_initialized_embeddings(
                 approximation_rank, data.shape[0], data.shape[1])
+    u_bias = np.zeros(u_embedding.shape[0])
+    z_bias = np.zeros(z_embedding.shape[0])
     reconstruction = learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reg_emb, reg_bias)
     utils.clip(reconstruction)

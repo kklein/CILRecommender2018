@@ -52,12 +52,13 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
 def predict_by_sgd(masked_data, approximation_rank=None, regularization=REGULARIZATION,
         u_embedding=None, z_embedding=None, n_epochs=N_EPOCHS):
     np.random.seed(42)
-    u_bias = np.zeros(u_embedding.shape[0])
-    z_bias = np.zeros(z_embedding.shape[0])
+
     if u_embedding is None and z_embedding is None:
         print("Initialize embeddings.")
         u_embedding, z_embedding = utils_sgd.get_initialized_embeddings(
                 approximation_rank, masked_data.shape[0], masked_data.shape[1])
+    u_bias = np.zeros(u_embedding.shape[0])
+    z_bias = np.zeros(z_embedding.shape[0])
     reconstruction = learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             regularization)
     utils.clip(reconstruction)
