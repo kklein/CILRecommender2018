@@ -73,19 +73,19 @@ def predict_by_sgd(masked_data, approximation_rank=None, regularization=REGULARI
 
 def main():
     np.seterr(all='raise')
-    # k = 6
+    k = 12
     # k = int(sys.argv[1])
-    # regularization = REGULARIZATION
+    regularization = 0.2
     # regularization = float(sys.argv[2])
-    ranks = [i for i in range(3, 25<)]
-    regularizations = [0.005, 0.002, 0.02, 0.05, 0.2, 0.5]
-    k = np.random.choice(ranks)
-    regularization = np.random.choice(regularizations)
+    # ranks = [i for i in range(3, 25)]
+    # regularizations = [0.005, 0.002, 0.02, 0.05, 0.2, 0.5]
+    # k = np.random.choice(ranks)
+    # regularization = np.random.choice(regularizations)
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-    svd_initiliazied = random.choice([True, False])
-    # svd_initiliazied = True
+    # svd_initiliazied = random.choice([True, False])
+    svd_initiliazied = False
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
@@ -109,7 +109,7 @@ def main():
     print('RSME after smoothing: %f' % rsme)
     utils_sgd.write_sgd_score(rsme, k, regularization, regularization, 'S',
             initialization_string, SCORE_FILE)
-    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()
