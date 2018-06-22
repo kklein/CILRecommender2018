@@ -32,7 +32,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                 temp_z_emb = z_embedding[l, feature_index]
 
                 # TODO(kkleindev): Rename.
-                aux = u_bias[k] + z_bias[l] - total_average
+                # aux = u_bias[k] + z_bias[l] - total_average
 
                 residual = data[k, l] - u_bias[k] - z_bias[l] - np.dot(
                         u_embedding[k, : feature_index + 1],
@@ -42,9 +42,9 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                 u_embedding[k, feature_index] += LEARNING_RATE * residual * temp_z_emb
                 z_embedding[l, feature_index] *= (1 - LEARNING_RATE * reg_emb)
                 z_embedding[l, feature_index] += LEARNING_RATE * residual * temp_u_emb
-                u_bias[k] -= LEARNING_RATE * reg_bias * aux
+                u_bias[k] -= LEARNING_RATE * reg_bias * u_bias[k]
                 u_bias[k] += LEARNING_RATE * residual
-                z_bias[l] -= LEARNING_RATE * reg_bias * aux
+                z_bias[l] -= LEARNING_RATE * reg_bias * z_bias[l]
                 z_bias[l] += LEARNING_RATE * residual
 
             reconstruction = utils_sgd.reconstruct(
