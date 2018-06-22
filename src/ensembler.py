@@ -14,6 +14,7 @@ import model_svd
 SUBMISSION_FILE = os.path.join(
     utils.ROOT_DIR, 'data/ensemble' +
     datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
+ENSEMBLE_INPUT_DIR = 'data/stacking'
 
 
 def run_stacked_svd():
@@ -90,6 +91,47 @@ def run_stacked_svd():
 #     reconstruction = predict_by_sgd(masked_data, k, regularization)
 #     rsme = utils.compute_rsme(data, reconstruction)
 
+def generate_debug_predictions():
+    all_ratings = utils.load_ratings()
+    data = utils.ratings_to_matrix(all_ratings)
+    # TODO: make sure the mask is on 20% not 10%
+    masked_data = utils.mask_validation(data)
+
+
+def stacking(meta_training, meta_validation):
+    ground_truth_ratings = utils.load_ratings()
+    ground_truth_ratings = utils.ratings_to_matrix(ground_truth_ratings)
+    # TODO: rename function to something more appropriate?
+    
+    train_indices = utils.get_validation_indices(
+        "data/validationIndices_first.csv")
+    train_ratings_predictions = np.squeeze([[rating[i, j] for rating in meta_training] for i,j in train_indices])
+    train_ratings_target = [ground_truth_ratings[i, j] for i, j in train_indices]
+    validation_indices = utils.get_validation_indices(
+        "data/validationIndices_second.csv")
+    validation_ratings_predictions = np.squeeze(
+        [[rating[i, j] for rating in meta_validation] for i, j in train_indices])
+    validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
+
+
+    # TODO: load predictions from files, put in right format
+
+    # using linear regression
+    # TODO: test
+    weights = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
+    lvl2_predictions = np.dot(
+        weights, validation_ratings_predictions) / len(meta_validation)
+
+    # using polynomial regression
+    # weights = np.fit(predictions, validation_ratings, deg=2)
+    # lvl2_predictions = np.dot(weights, predictions) / len(predictions)
+
+    # using a neural net
+    # regressor.fit(X=predictions, y=v  alidation_ratings)
+
+    # lvl2_predictions = regressor.predict(X=data)
+    print(lvl2_predictions)
+
 
 def bagging(n):
     """
@@ -154,10 +196,10 @@ def bagging(n):
     print("Predictions saved in {}".format(SUBMISSION_FILE))
 
 
-def load_predictions_from_files():
-    path = os.path.join(utils.ROOT_DIR, 'data/ensembles/4folds')
+def load_predictions_from_files(file_prefix='submission_'):
+    path = os.path.join(utils.ROOT_DIR, ENSEMBLE_INPUT_DIR)
     files = [os.path.join(path, i) for i in os.listdir(path) if \
-            os.path.isfile(os.path.join(path,i)) and 'submission_' in i]
+            os.path.isfile(os.path.join(path,i)) and file_prefix in i]
     all_ratings = []
     for n, file in enumerate(files):
         print("loading {}".format(file))
@@ -175,13 +217,23 @@ def compute_mean_predictions(all_ratings):
     reconstruction = np.nanmean(np.array(all_ratings), axis=0)
     # TODO(ben): set remaining NaNs to a sensible value, e.g. row mean/ column mean
     np.nan_to_num(reconstruction, copy=False)
-    reconstruction = utils.impute_by_avg(reconstruction, by_row=True)
+    reconstruction = utils.impute_by_avg(reconstruction, by_row=False)
     return reconstruction
 
 
 def main():
-    # compute_mean_predictions(load_predictions_from_files())
-    bagging(3)
+    # all_ratings = utils.load_ratings()
+    # data = utils.ratings_to_matrix(all_ratings)
+    # mean_predictions = compute_mean_predictions(load_predictions_from_files())
+    # rmse = utils.compute_rsme(data, mean_predictions)
+    # print("mean_predictions rmse:", rmse)
+    # utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
+    # print("Predictions saved in {}".format(SUBMISSION_FILE))
+
+    # bagging(3)
+
+    stacking(load_predictions_from_files('meta_training'),
+             load_predictions_from_files('meta_validation'))
 
 
 if __name__ == '__main__':

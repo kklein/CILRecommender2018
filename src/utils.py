@@ -58,8 +58,9 @@ def mask_validation(data):
         masked_data[row_index][col_index] = 0
     return masked_data
 
-def get_validation_indices():
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+
+def get_validation_indices(file_name=VALIDATION_FILE_NAME):
+    validation_indices = get_indeces_from_file(file_name)
     return validation_indices
 
 def get_observed_indeces(data):

@@ -45,16 +45,26 @@ def main():
     imputed_data = np.copy(masked_data)
     utils.impute_by_avg(imputed_data, True)
     reconstruction, u_embeddings, _ =\
-            predict_by_svd(masked_data, imputed_data, k)
+        predict_by_svd(masked_data, imputed_data, k)
     rsme = utils.compute_rsme(data, reconstruction)
     print('RSME before smoothing: %f' % rsme)
     write_svd_score(rsme, k, False)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
     rsme = utils.compute_rsme(data, reconstruction)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_training_svd_stacking.csv', indices_to_predict=utils.get_validation_indices(
+            utils.ROOT_DIR + "data/validationIndices_first.csv"))
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_validation_svd_stacking.csv', indices_to_predict=utils.get_validation_indices(
+            utils.ROOT_DIR + "data/validationIndices_second.csv"))
     print('RSME after smoothing: %f' % rsme)
     write_svd_score(rsme, k, True)
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+
 
 if __name__ == '__main__':
     main()
