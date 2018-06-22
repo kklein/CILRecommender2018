@@ -16,8 +16,7 @@ EPSILON = 0.0001
 
 def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reg_emb, reg_bias):
-    residual_data = data
-
+    # residual_data = np.copy(data)
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     approximation_rank = u_embedding.shape[1]
@@ -29,28 +28,30 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             random.shuffle(training_indices)
 
             for k, l in training_indices:
-                u_value = u_embedding[k, feature_index]
-                z_value = z_embedding[l, feature_index]
-                residual = residual_data[k, l] - total_average - u_bias[k] -\
-                        z_bias[l] - u_value * z_value
-                u_update =\
-                        LEARNING_RATE * (residual * z_value - reg_emb * u_value)
-                z_update =\
-                        LEARNING_RATE * (residual * u_value - reg_emb * z_value)
-                u_bias_update =\
-                        LEARNING_RATE * (residual - reg_bias * u_bias[k])
-                z_bias_update =\
-                        LEARNING_RATE * (residual - reg_bias * z_bias[l])
-                u_embedding[k, feature_index] += u_update
-                z_embedding[l, feature_index] += z_update
-                u_bias[k] += u_bias_update
-                z_bias[l] += z_bias_update
+                temp_u_emb = u_embedding[k, feature_index]
+                temp_z_emb = z_embedding[l, feature_index]
+
+                # TODO(kkleindev): Rename.
+                aux = u_bias[k] + z_bias[l] - total_average
+
+                residual = data[k, l] - u_bias[k] - z_bias[l] - np.dot(
+                        u_embedding[k, : feature_index + 1],
+                        z_embedding[l, : feature_index + 1])
+
+                u_embedding[k, feature_index] *= (1 - LEARNING_RATE * reg_emb)
+                u_embedding[k, feature_index] += LEARNING_RATE * residual * temp_z_emb
+                z_embedding[l, feature_index] *= (1 - LEARNING_RATE * reg_emb)
+                z_embedding[l, feature_index] += LEARNING_RATE * residual * temp_u_emb
+                u_bias[k] -= LEARNING_RATE * reg_bias * aux
+                u_bias[k] += LEARNING_RATE * residual
+                z_bias[l] -= LEARNING_RATE * reg_bias * aux
+                z_bias[l] += LEARNING_RATE * residual
 
             reconstruction = utils_sgd.reconstruct(
                     u_embedding[:, :feature_index + 1],
-                    z_embedding[:, :feature_index + 1], total_average, u_bias,
+                    z_embedding[:, :feature_index + 1], u_bias,
                     z_bias)
-            residual_data = data - reconstruction
+            # residual_data = data - reconstruction
             rsme = utils.compute_rsme(data, reconstruction)
             print(rsme)
             if abs(last_rsme - rsme) < EPSILON:
