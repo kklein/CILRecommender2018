@@ -85,11 +85,10 @@ def main():
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
     # svd_initiliazied = random.choice([True, False])
-    svd_initiliazied = False
+    svd_initiliazied = True
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
-        imputed_data -= np.mean(masked_data[np.nonzero(masked_data)])
         utils.impute_by_novel(imputed_data)
         u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
