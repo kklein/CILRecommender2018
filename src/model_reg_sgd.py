@@ -8,7 +8,7 @@ import model_svd
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/reg_sgd100_scores.csv')
-N_EPOCHS = 100
+N_EPOCHS = 5
 LEARNING_RATE = 0.001
 REGULARIZATION = 0.02
 EPSILON = 0.00001
@@ -28,8 +28,7 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         for k, l in training_indices:
             u_values = u_embedding[k, :]
             z_values = z_embedding[l, :]
-            residual = masked_data[k, l] - total_average - u_bias[k] - z_bias[l] -\
-                    np.dot(u_values, z_values)
+            residual = masked_data[k, l] - total_average - u_bias[k] - z_bias[l] - np.dot(u_values, z_values)
             # residual = masked_data[k, l] - total_average - np.dot(u_values, z_values)
             u_embedding[k, :] *= (1 - regularization * LEARNING_RATE)
             u_embedding[k, :] += LEARNING_RATE * residual * z_values
@@ -40,7 +39,7 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             z_bias[l] *= (1 - regularization * LEARNING_RATE)
             z_bias[l] += LEARNING_RATE * residual
         reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding,
-                total_average, u_bias, z_bias)
+                u_bias, z_bias, total_average)
         # reconstruction = np.dot(u_embedding, z_embedding.T) + total_average
         # Training rsme.
         rsme = utils.compute_rsme(masked_data, reconstruction, utils.get_observed_indeces(masked_data))
@@ -56,26 +55,28 @@ def predict_by_sgd(masked_data, approximation_rank=None, regularization=REGULARI
         print("Initialize embeddings.")
         u_embedding, z_embedding = utils_sgd.get_initialized_embeddings(
                 approximation_rank, masked_data.shape[0], masked_data.shape[1])
-        u_bias, z_bias = utils_sgd.get_initialized_biases(masked_data)
-    else:
+        # u_bias, z_bias = utils_sgd.get_initialized_biases(masked_data)
+    # else:
         print('randomly initialize biases.')
-        u_bias = np.random.rand(u_embedding.shape[0])
-        z_bias = np.random.rand(z_embedding.shape[0])
+        # u_bias = np.random.rand(u_embedding.shape[0])
+        # z_bias = np.random.rand(z_embedding.shape[0])
+    u_bias = np.zeros(u_embedding.shape[0])
+    z_bias = np.zeros(z_embedding.shape[0])
     if u_embedding is None or z_embedding is None:
         raise ValueError("embedding is None!")
 
     learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             regularization)
     total_average = np.mean(masked_data[np.nonzero(masked_data)])
-    reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, total_average, u_bias, z_bias)
+    reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding, u_bias, z_bias, total_average)
     utils.clip(reconstruction)
     return reconstruction, u_embedding
 
 def main():
     np.seterr(all='raise')
-    k = 12
+    k = 7
     # k = int(sys.argv[1])
-    regularization = 0.2
+    regularization = 0.02
     # regularization = float(sys.argv[2])
     # ranks = [i for i in range(3, 25)]
     # regularizations = [0.005, 0.002, 0.02, 0.05, 0.2, 0.5]
@@ -85,7 +86,7 @@ def main():
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
     # svd_initiliazied = random.choice([True, False])
-    svd_initiliazied = True
+    svd_initiliazied = False
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
