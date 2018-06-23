@@ -2,6 +2,7 @@ import os
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
+import copy
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
@@ -160,12 +161,27 @@ def impute_by_novel(data):
     w = 10.0
     user_counts = np.count_nonzero(data, axis=1)
     movie_counts = np.count_nonzero(data, axis=0)
+
+    movie_count_matrix = np.tile(movie_counts, (len(user_counts), 1))
+    user_count_matrix = np.tile(user_counts, (len(movie_counts), 1)).T
+    combined_matrix = \
+        copy.copy(movie_count_matrix) + w * copy.copy(user_count_matrix)
+    d_matrix = np.divide(movie_count_matrix, combined_matrix)
+
+    m_matrix = np.tile(m, (len(u), 1))
+    u_matrix = np.tile(u, (len(m), 1)).T
+
+    data_new = np.multiply(m_matrix, d_matrix) + \
+        np.multiply(u_matrix, np.ones(d_matrix.shape) - d_matrix)
+
+
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
             d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
             data[i, j] = d * m[j] + (1 - d) * u[i]
 
-    # print(data[:10])
+    print("Matrix mult result is equal to loops result: ", np.all(data == data_new))
+
     return data
 
 def compute_rsme(data, prediction, indices=None):
