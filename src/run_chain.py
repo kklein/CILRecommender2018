@@ -28,12 +28,13 @@ def main():
         if np.isnan(u_embeddings).any() or np.isnan(z_embeddings).any():
             raise ValueError('Embeddings contain NaNs.')
         print("Executing sgd by sf.")
-        reconstruction = sf.predict_by_sf(masked_data,
+        reconstruction, u_embedding = sf.predict_by_sf(masked_data,
                 reg_emb=REG_EMB, reg_bias=REG_BIAS, n_epochs=N_EPOCHS,
                 u_embedding=u_embeddings, z_embedding=z_embeddings)
         if np.isnan(reconstruction).any():
             raise ValueError('Sf reconstruction created NaNs.')
         utils.ampute_reconstruction(reconstruction, data)
+    reconstruction = utils.knn_smoothing(reconstruction, u_embedding)
     rsme = utils.compute_rsme(data, reconstruction)
     print(rsme)
     # write_chain_score(SCORE_FILE)
