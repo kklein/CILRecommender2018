@@ -171,17 +171,8 @@ def impute_by_novel(data):
     m_matrix = np.tile(m, (len(u), 1))
     u_matrix = np.tile(u, (len(m), 1)).T
 
-    data_new = np.multiply(m_matrix, d_matrix) + \
+    data = np.multiply(m_matrix, d_matrix) + \
         np.multiply(u_matrix, np.ones(d_matrix.shape) - d_matrix)
-
-
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            d = movie_counts[j] / (movie_counts[j] + w * user_counts[i])
-            data[i, j] = d * m[j] + (1 - d) * u[i]
-
-    print("Matrix mult result is equal to loops result: ", np.all(data == data_new))
-
     return data
 
 def compute_rsme(data, prediction, indices=None):
