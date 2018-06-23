@@ -36,8 +36,8 @@ import model_svd
 
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,
-                               'data/submission_nn.csv')
-SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores_31.csv')
+                               'data/submission_nn_on__iterated_svd_20d_shallow.csv')
+SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores_23.csv')
 ENSEMBLE = False
 
 
