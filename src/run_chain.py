@@ -8,11 +8,11 @@ SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/chain.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/chain_scores.csv')
 
-N_META_EPOCHS = 3
-N_EPOCHS = 2
+N_META_EPOCHS = 6
+N_EPOCHS = 100
 REG_EMB = 0.02
 REG_BIAS = 0.05
-APPROXIMATION_RANK = 4
+APPROXIMATION_RANK = 20
 
 def main():
     all_ratings = utils.load_ratings()
