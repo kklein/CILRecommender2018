@@ -26,6 +26,7 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         print("Epoch {0}:".format(i))
         random.shuffle(training_indices)
         for k, l in training_indices:
+            aux = u_bias[k] + z_bias[l] - total_average
             u_values = u_embedding[k, :]
             z_values = z_embedding[l, :]
             residual = masked_data[k, l] - u_bias[k] - z_bias[l] - np.dot(u_values, z_values)
@@ -34,9 +35,9 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             u_embedding[k, :] += LEARNING_RATE * residual * z_values
             z_embedding[l, :] *= (1 - regularization * LEARNING_RATE)
             z_embedding[l, :] += LEARNING_RATE * residual * u_values
-            u_bias[k] *= (1 - regularization * LEARNING_RATE)
+            u_bias[k] -= regularization * LEARNING_RATE * aux
             u_bias[k] += LEARNING_RATE * residual
-            z_bias[l] *= (1 - regularization * LEARNING_RATE)
+            z_bias[l] -= regularization * LEARNING_RATE * aux
             z_bias[l] += LEARNING_RATE * residual
         reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding,
                 u_bias, z_bias)
