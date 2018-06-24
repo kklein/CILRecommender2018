@@ -1,12 +1,12 @@
 import os
 import random
+from datetime import datetime
 import numpy as np
 import utils
 import utils_sgd
 import model_svd
 
-SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/submission_sgd.csv')
+SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/reg_sgd100_scores.csv')
 N_EPOCHS = 100
 LEARNING_RATE = 0.001
