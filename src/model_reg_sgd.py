@@ -15,10 +15,6 @@ EPSILON = 0.00001
 
 def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization):
-    u_embedding = np.float128(u_embedding)
-    z_embedding = np.float128(z_embedding)
-    u_bias = np.float128(u_bias)
-    z_bias = np.float128(z_bias)
     last_rsme = 5
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(masked_data[np.nonzero(masked_data)])

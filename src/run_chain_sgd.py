@@ -25,16 +25,12 @@ def main():
         print("Computing embeddings.")
         u_embeddings, z_embeddings =\
                 svd.get_embeddings(reconstruction, APPROXIMATION_RANK)
-        if np.isnan(u_embeddings).any() or np.isnan(z_embeddings).any():
-            raise ValueError('Embeddings contain NaNs.')
         print("Executing reg sgd.")
-        reconstruction, u_embedding = sgd.predict_by_sgd(masked_data,
+        reconstruction, u_embeddings = sgd.predict_by_sgd(masked_data,
                 regularization=REG_EMB, n_epochs=N_EPOCHS,
                 u_embedding=u_embeddings, z_embedding=z_embeddings)
-        if np.isnan(reconstruction).any():
-            raise ValueError('Sf reconstruction created NaNs.')
-        utils.ampute_reconstruction(reconstruction, data)
-    reconstruction = utils.knn_smoothing(reconstruction, u_embedding)
+        utils.ampute_reconstruction(reconstruction, masked_data)
+    reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
     rsme = utils.compute_rsme(data, reconstruction)
     print(rsme)
     # write_chain_score(SCORE_FILE)
