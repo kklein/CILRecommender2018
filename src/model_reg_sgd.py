@@ -15,10 +15,6 @@ EPSILON = 0.00001
 
 def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization):
-    u_embedding = np.float128(u_embedding)
-    z_embedding = np.float128(z_embedding)
-    u_bias = np.float128(u_bias)
-    z_bias = np.float128(z_bias)
     last_rsme = 5
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(masked_data[np.nonzero(masked_data)])
@@ -26,6 +22,7 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         print("Epoch {0}:".format(i))
         random.shuffle(training_indices)
         for k, l in training_indices:
+            # TODO(kkleindev): Rename variable.
             aux = u_bias[k] + z_bias[l] - total_average
             u_values = u_embedding[k, :]
             z_values = z_embedding[l, :]
