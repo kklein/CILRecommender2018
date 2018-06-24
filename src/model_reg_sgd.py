@@ -26,6 +26,7 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         print("Epoch {0}:".format(i))
         random.shuffle(training_indices)
         for k, l in training_indices:
+            # TODO(kkleindev): Rename variable.
             aux = u_bias[k] + z_bias[l] - total_average
             u_values = u_embedding[k, :]
             z_values = z_embedding[l, :]
