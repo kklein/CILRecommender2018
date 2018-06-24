@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 from sklearn import ensemble
 from sklearn.neural_network import MLPRegressor
+import xgboost as xgb
 
 import utils
 import model_reg_sgd
@@ -15,6 +16,7 @@ SUBMISSION_FILE = os.path.join(
     utils.ROOT_DIR, 'data/ensemble' +
     datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 ENSEMBLE_INPUT_DIR = 'data/stacking'
+STACKING_METHOD = 'nn'
 
 
 def run_stacked_svd():
@@ -111,24 +113,33 @@ def stacking(meta_training, meta_validation):
         [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
     # validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
 
-    # using linear regression
-    # weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
-    # print("Weights: {}\tres: {}".format(weights, res))
-    # lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+    if STACKING_METHOD == 'lr':
+        # using linear regression
+        weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
+        print("Weights: {}\tres: {}".format(weights, res))
+        lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
 
-    # using polynomial regression
-    weights, res, _, _ = np.polyfit(train_ratings_predictions, train_ratings_target, deg=2, full=True)
-    print("Weights: {}\tres: {}".format(weights, res))
-    lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+    elif STACKING_METHOD == 'pr':
+        # using polynomial regression
+        weights, res, _, _ = np.polyfit(train_ratings_predictions, train_ratings_target, deg=2, full=True)
+        print("Weights: {}\tres: {}".format(weights, res))
+        lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+
+    elif STACKING_METHOD == 'nn':
+        # using a neural net
+        regressor.fit(X=predictions, y=validation_ratings)
+        lvl2_predictions = regressor.predict(X=data)
+
+    elif STACKING_METHOD == "xgb":
+        # using xgboost
+        regressor = xgb.XGBRegressor(max_depth=4, learning_rate=0.8, n_estimators=100, eta=0.99)
+        regressor.fit(train_ratings_predictions, train_ratings_target)
+        lvl2_predictions = regressor.predict(validation_ratings_predictions)
 
     lvl2_predictions = utils.ratings_to_matrix([(validation_indices[i][0], validation_indices[i][1],
                                                  lvl2_predictions[i]) for i in range(len(validation_indices))])
-
-    # using a neural net
-    # regressor.fit(X=predictions, y=v  alidation_ratings)
-
-    # lvl2_predictions = regressor.predict(X=data)
     print(lvl2_predictions[:10])
+    lvl2_predictions = utils.clip(lvl2_predictions)
 
     rmse = utils.compute_rsme(ground_truth_ratings, lvl2_predictions, validation_indices)
     print("lvl2_predictions rmse:", rmse)
