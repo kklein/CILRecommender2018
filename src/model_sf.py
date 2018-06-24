@@ -1,5 +1,6 @@
 import os
 import random
+from datetime import datetime
 import numpy as np
 import utils
 import utils_sgd
@@ -114,6 +115,17 @@ def main():
     print('Validation RSME after smoothing: %f' % rsme)
     utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, 'S',
             initialization_string, SCORE_FILE)
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_training_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_validation_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+        '.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
+
+
 
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
