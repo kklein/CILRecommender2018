@@ -1,3 +1,4 @@
+validation_rmse, embedding_type, embedding_dimensionality, hidden_layer_dimensions, n_train_samples, learning_rate
 1.1165412726916868, ids, 10, (5, 2), 1059257, 0.0001
 1.1165218957153271, lle, 10, (5, 2, 1), 1059257, 0.0001
 1.0942439470459173, lle, 10, (5,), 1059257, 0.0001
