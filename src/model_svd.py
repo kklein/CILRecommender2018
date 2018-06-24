@@ -56,7 +56,6 @@ def main():
         reconstruction,
         utils.ROOT_DIR + 'data/meta_training_svd_stacking.csv', indices_to_predict=utils.get_validation_indices(
             utils.ROOT_DIR + "data/validationIndices_first.csv"))
-    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
     utils.reconstruction_to_predictions(
         reconstruction,
         utils.ROOT_DIR + 'data/meta_validation_svd_stacking.csv', indices_to_predict=utils.get_validation_indices(

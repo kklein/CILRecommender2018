@@ -2,7 +2,7 @@ import numpy as np
 import utils
 
 TRAIN_PROPORTION = 0.8
-NUM_VALIDATION_SETS = 2
+THREE_WAY_SPLIT = True
 
 
 def write_indices_to_file(indices, file_name):
@@ -13,6 +13,7 @@ def write_indices_to_file(indices, file_name):
             file.write('%d, %d\n' % (i, j))
 
 def main():
+    np.random.seed(10)
     all_ratings = utils.load_ratings('../data/data_train.csv')
     data_matrix = utils.ratings_to_matrix(all_ratings)
     observed_indices = utils.get_observed_indeces(data_matrix)
@@ -23,7 +24,7 @@ def main():
     training_indices.sort(key=lambda x: (x[0], x[1]))
     validation_indices.sort(key=lambda x: (x[0], x[1]))
     write_indices_to_file(training_indices, utils.TRAINING_FILE_NAME)
-    if NUM_VALIDATION_SETS == 2:
+    if THREE_WAY_SPLIT:
         validation_indices_first = validation_indices[:int(np.floor(len(validation_indices) / 2))]
         validation_indices_second = validation_indices[int(np.floor(len(validation_indices) / 2)):]
         write_indices_to_file(validation_indices_first, utils.VALIDATION_FILE_NAME.split(".csv")[0] + "_first.csv")

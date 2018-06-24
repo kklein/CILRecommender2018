@@ -9,7 +9,7 @@ DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
 TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
             'data/trainingIndices.csv')
 VALIDATION_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/validationIndices.csv')
+            'data/validationIndices_first.csv')
 
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
             'data/sampleSubmission.csv')
@@ -197,7 +197,6 @@ def compute_rsme(data, prediction, indices=None):
 
 
 def compute_fold_rmse(data, prediction, validation_indices):
-    # print("validation_indices: ", validation_indices)
     squared_error = 0
     for i, j in validation_indices:
         squared_error += (data[i][j] - prediction[i][j]) ** 2

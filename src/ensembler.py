@@ -102,35 +102,39 @@ def stacking(meta_training, meta_validation):
     ground_truth_ratings = utils.load_ratings()
     ground_truth_ratings = utils.ratings_to_matrix(ground_truth_ratings)
     # TODO: rename function to something more appropriate?
-    
-    train_indices = utils.get_validation_indices(
-        "data/validationIndices_first.csv")
-    train_ratings_predictions = np.squeeze([[rating[i, j] for rating in meta_training] for i,j in train_indices])
+
+    train_indices = utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv")
+    train_ratings_predictions = np.squeeze([[rating[i, j] for rating in meta_training] for i, j in train_indices])
     train_ratings_target = [ground_truth_ratings[i, j] for i, j in train_indices]
-    validation_indices = utils.get_validation_indices(
-        "data/validationIndices_second.csv")
+    validation_indices = utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv")
     validation_ratings_predictions = np.squeeze(
-        [[rating[i, j] for rating in meta_validation] for i, j in train_indices])
-    validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
-
-
-    # TODO: load predictions from files, put in right format
+        [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
+    # validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
 
     # using linear regression
-    # TODO: test
-    weights = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
-    lvl2_predictions = np.dot(
-        weights, validation_ratings_predictions) / len(meta_validation)
+    # weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
+    # print("Weights: {}\tres: {}".format(weights, res))
+    # lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
 
     # using polynomial regression
-    # weights = np.fit(predictions, validation_ratings, deg=2)
-    # lvl2_predictions = np.dot(weights, predictions) / len(predictions)
+    weights, res, _, _ = np.polyfit(train_ratings_predictions, train_ratings_target, deg=2, full=True)
+    print("Weights: {}\tres: {}".format(weights, res))
+    lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+
+    lvl2_predictions = utils.ratings_to_matrix([(validation_indices[i][0], validation_indices[i][1],
+                                                 lvl2_predictions[i]) for i in range(len(validation_indices))])
 
     # using a neural net
     # regressor.fit(X=predictions, y=v  alidation_ratings)
 
     # lvl2_predictions = regressor.predict(X=data)
-    print(lvl2_predictions)
+    print(lvl2_predictions[:10])
+
+    rmse = utils.compute_rsme(ground_truth_ratings, lvl2_predictions, validation_indices)
+    print("lvl2_predictions rmse:", rmse)
+    utils.reconstruction_to_predictions(lvl2_predictions, SUBMISSION_FILE, validation_indices)
+    print("Predictions saved in {}".format(SUBMISSION_FILE))
+    utils.reconstruction_to_predictions(ground_truth_ratings, utils.ROOT_DIR + "gt_data.csv", validation_indices)
 
 
 def bagging(n):

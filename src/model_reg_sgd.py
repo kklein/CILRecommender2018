@@ -103,6 +103,15 @@ def main():
     utils_sgd.write_sgd_score(rsme, k, regularization, regularization, 'S',
             initialization_string, SCORE_FILE)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_training_reg_svd_stacking.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_validation_reg_svd_stacking.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
+
 
 if __name__ == '__main__':
     main()
