@@ -117,11 +117,11 @@ def main():
             initialization_string, SCORE_FILE)
     utils.reconstruction_to_predictions(
         reconstruction,
-        utils.ROOT_DIR + 'data/meta_training_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        utils.ROOT_DIR + 'data/meta_training_sf_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
         indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
     utils.reconstruction_to_predictions(
         reconstruction,
-        utils.ROOT_DIR + 'data/meta_validation_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+        utils.ROOT_DIR + 'data/meta_validation_sf_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
         '.csv',
         indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
 

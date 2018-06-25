@@ -127,8 +127,9 @@ def stacking(meta_training, meta_validation):
 
     elif STACKING_METHOD == 'nn':
         # using a neural net
-        regressor.fit(X=predictions, y=validation_ratings)
-        lvl2_predictions = regressor.predict(X=data)
+        regressor = MLPRegressor(hidden_layer_sizes=(50, 100))
+        regressor.fit(X=train_ratings_predictions, y=train_ratings_target)
+        lvl2_predictions = regressor.predict(X=validation_ratings_predictions)
 
     elif STACKING_METHOD == "xgb":
         # using xgboost
