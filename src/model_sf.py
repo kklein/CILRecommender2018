@@ -3,7 +3,7 @@ import random
 import numpy as np
 import utils
 import utils_sgd
-import model_svd
+import utils_svd as svd
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sf_sgd.csv')
@@ -51,7 +51,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                     z_embedding[:, :feature_index + 1], u_bias,
                     z_bias)
             # residual_data = data - reconstruction
-            # rsme = utils.compute_rsme(data, reconstruction, utils.get_observed_indeces(data))
+            rsme = utils.compute_rsme(data, reconstruction, utils.get_observed_indeces(data))
             # print(rsme)
             if abs(last_rsme - rsme) < EPSILON:
                 break
@@ -96,7 +96,7 @@ def main():
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
         utils.impute_by_novel(imputed_data)
-        u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
+        u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
                 z_embeddings)

@@ -3,7 +3,7 @@ import random
 import numpy as np
 import utils
 import utils_sgd
-import model_svd
+import utils_svd as svd
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sgd.csv')
@@ -81,7 +81,7 @@ def main():
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
         utils.impute_by_novel(imputed_data)
-        u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
+        u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, k)
         reconstruction, u_embeddings =\
                 predict_by_sgd(masked_data, k, regularization, u_embeddings,
                 z_embeddings)
