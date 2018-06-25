@@ -73,7 +73,7 @@ def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
     reconstruction = learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reg_emb, reg_bias)
     utils.clip(reconstruction)
-    return reconstruction, u_embedding
+    return reconstruction, u_embedding, z_embedding
 
 def main():
     # k = int(sys.argv[1])
@@ -97,12 +97,12 @@ def main():
         imputed_data = np.copy(masked_data)
         utils.impute_by_novel(imputed_data)
         u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, k)
-        reconstruction, u_embeddings =\
+        reconstruction, u_embeddings, _ =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
                 z_embeddings)
     else:
         initialization_string = 'rand'
-        reconstruction, u_embeddings =\
+        reconstruction, u_embeddings, _ =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias)
 
     rsme = utils.compute_rsme(data, reconstruction)

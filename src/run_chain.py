@@ -17,7 +17,7 @@ APPROXIMATION_RANK = 20
 
 def write_chain_score(approximation_rank, n_meta_epochs, score):
     with open(SCORE_FILE, 'a+') as file:
-        file.write('%d, %d, %f\n' % (k, n_meta_epochs, score))
+        file.write('%d, %d, %f\n' % (approximation_rank, n_meta_epochs, score))
 
 def main():
     if len(sys.argv) == 1:
@@ -37,13 +37,14 @@ def main():
         u_embeddings, z_embeddings =\
                 svd.get_embeddings(reconstruction, approximation_rank)
         print("Executing sgd by sf.")
-        reconstruction, u_embeddings = sf.predict_by_sf(masked_data,
+        predictions, u_embeddings, z_embeddings = sf.predict_by_sf(masked_data,
                 reg_emb=REG_EMB, reg_bias=REG_BIAS, n_epochs=N_EPOCHS,
                 u_embedding=u_embeddings, z_embedding=z_embeddings)
+        reconstruction = np.dot(u_embeddings, z_embeddings.T)
         utils.ampute_reconstruction(reconstruction, masked_data)
         rsme = utils.compute_rsme(data, reconstruction)
         print("meta iteration %d val. rsme: %f" % (i, rsme))
-    reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
+    reconstruction = utils.knn_smoothing(predictions, u_embeddings)
     rsme = utils.compute_rsme(data, reconstruction)
     print("RSME after smoothing: %f" % rsme)
     write_chain_score(approximation_rank, n_meta_epochs, rsme)
