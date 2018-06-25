@@ -24,7 +24,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         print("Feature %d." % feature_index)
         last_rsme = 5
         for i in range(n_epochs):
-            print("Epoch {0}:".format(i))
+            # print("Epoch {0}:".format(i))
             random.shuffle(training_indices)
             for k, l in training_indices:
                 temp_u_emb = u_embedding[k, feature_index]
@@ -51,8 +51,8 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                     z_embedding[:, :feature_index + 1], u_bias,
                     z_bias)
             # residual_data = data - reconstruction
-            rsme = utils.compute_rsme(data, reconstruction, utils.get_observed_indeces(data))
-            print(rsme)
+            # rsme = utils.compute_rsme(data, reconstruction, utils.get_observed_indeces(data))
+            # print(rsme)
             if abs(last_rsme - rsme) < EPSILON:
                 break
             last_rsme = rsme
