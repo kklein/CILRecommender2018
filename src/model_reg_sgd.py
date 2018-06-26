@@ -60,7 +60,7 @@ def predict_by_sgd(masked_data, approximation_rank=None, regularization=REGULARI
     reconstruction = learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
             regularization)
     utils.clip(reconstruction)
-    return reconstruction, u_embedding
+    return reconstruction, u_embedding, z_embedding
 
 def main():
     np.seterr(all='raise')
@@ -82,7 +82,7 @@ def main():
         imputed_data = np.copy(masked_data)
         utils.impute_by_novel(imputed_data)
         u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, k)
-        reconstruction, u_embeddings =\
+        reconstruction, u_embeddings, _ =\
                 predict_by_sgd(masked_data, k, regularization, u_embeddings,
                 z_embeddings)
     else:
