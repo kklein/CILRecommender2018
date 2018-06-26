@@ -3,7 +3,7 @@ import random
 import numpy as np
 import utils
 import utils_sgd
-import model_svd
+import utils_svd as svd
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
         'data/submission_sf_sgd.csv')
@@ -24,7 +24,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         print("Feature %d." % feature_index)
         last_rsme = 5
         for i in range(n_epochs):
-            print("Epoch {0}:".format(i))
+            # print("Epoch {0}:".format(i))
             random.shuffle(training_indices)
             for k, l in training_indices:
                 temp_u_emb = u_embedding[k, feature_index]
@@ -52,7 +52,7 @@ def learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
                     z_bias)
             # residual_data = data - reconstruction
             rsme = utils.compute_rsme(data, reconstruction, utils.get_observed_indeces(data))
-            print(rsme)
+            # print(rsme)
             if abs(last_rsme - rsme) < EPSILON:
                 break
             last_rsme = rsme
@@ -73,7 +73,7 @@ def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
     reconstruction = learn(data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reg_emb, reg_bias)
     utils.clip(reconstruction)
-    return reconstruction, u_embedding
+    return reconstruction, u_embedding, z_embedding
 
 def main():
     # k = int(sys.argv[1])
@@ -96,13 +96,13 @@ def main():
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
         utils.impute_by_novel(imputed_data)
-        u_embeddings, z_embeddings = model_svd.get_embeddings(imputed_data, k)
-        reconstruction, u_embeddings =\
+        u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, k)
+        reconstruction, u_embeddings, _ =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias, u_embeddings,
                 z_embeddings)
     else:
         initialization_string = 'rand'
-        reconstruction, u_embeddings =\
+        reconstruction, u_embeddings, _ =\
                 predict_by_sf(masked_data, k, reg_emb, reg_bias)
 
     rsme = utils.compute_rsme(data, reconstruction)

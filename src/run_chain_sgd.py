@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import model_svd as svd
+import utils_svd as svd
 import model_reg_sgd as sgd
 import utils
 

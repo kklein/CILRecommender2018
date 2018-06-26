@@ -31,8 +31,9 @@ from sklearn.manifold import LocallyLinearEmbedding
 from sklearn.metrics import mean_squared_error
 
 import numpy as np
+import model_iterated_svd
 import utils
-import model_svd
+import utils_svd as svd
 
 DATA_FILE = os.path.join(utils.ROOT_DIR, 'data/data_train.csv')
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,
@@ -52,16 +53,13 @@ def get_embeddings(data, embedding_type, embedding_dimension):
     """
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
-        u_embedding, _, z_embedding = np.linalg.svd(data)
-        u_embedding = u_embedding[:, :embedding_dimension]
-        z_embedding = z_embedding[:embedding_dimension, :]
-        return u_embedding, z_embedding.T
+        return svd.get_embeddings(data, embedding_dimension)
     if embedding_type == "iterated_svd":
         all_ratings = utils.load_ratings()
         data_matrix = utils.ratings_to_matrix(all_ratings)
         masked_data_matrix = utils.mask_validation(data_matrix)
         _, u_embedding, z_embedding = \
-            model_svd.predict_by_svd(masked_data_matrix,
+            model_iterated_svd.predict_by_svd(masked_data_matrix,
                                      data, embedding_dimension)
         return u_embedding, z_embedding
 
