@@ -15,7 +15,7 @@ EPSILON = 0.00001
 
 def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         regularization):
-    last_rsme = 5
+    last_rmse = 5
     training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(masked_data[np.nonzero(masked_data)])
     for i in range(n_epochs):
@@ -39,12 +39,12 @@ def learn(masked_data, u_embedding, z_embedding, u_bias, z_bias, n_epochs,
         reconstruction = utils_sgd.reconstruct(u_embedding, z_embedding,
                 u_bias, z_bias)
         # reconstruction = np.dot(u_embedding, z_embedding.T) + total_average
-        # Training rsme.
-        rsme = utils.compute_rsme(masked_data, reconstruction, utils.get_observed_indeces(masked_data))
-        print(rsme)
-        if abs(last_rsme - rsme) < EPSILON:
+        # Training rmse.
+        rmse = utils.compute_rmse(masked_data, reconstruction, utils.get_observed_indeces(masked_data))
+        print(rmse)
+        if abs(last_rmse - rmse) < EPSILON:
             break
-        last_rsme = rsme
+        last_rmse = rmse
     return reconstruction
 
 def predict_by_sgd(masked_data, approximation_rank=None, regularization=REGULARIZATION,
@@ -90,14 +90,14 @@ def main():
         reconstruction, u_embeddings =\
                 predict_by_sgd(masked_data, k, regularization)
     print(initialization_string)
-    rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME before smoothing: %f' % rsme)
-    utils_sgd.write_sgd_score(rsme, k, regularization, regularization, '!S',
+    rmse = utils.compute_rmse(data, reconstruction)
+    print('rmse before smoothing: %f' % rmse)
+    utils_sgd.write_sgd_score(rmse, k, regularization, regularization, '!S',
             initialization_string, SCORE_FILE)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
-    rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME after smoothing: %f' % rsme)
-    utils_sgd.write_sgd_score(rsme, k, regularization, regularization, 'S',
+    rmse = utils.compute_rmse(data, reconstruction)
+    print('rmse after smoothing: %f' % rmse)
+    utils_sgd.write_sgd_score(rmse, k, regularization, regularization, 'S',
             initialization_string, SCORE_FILE)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 

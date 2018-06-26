@@ -31,8 +31,8 @@ def main():
                 u_embedding=u_embeddings, z_embedding=z_embeddings)
         utils.ampute_reconstruction(reconstruction, masked_data)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
-    rsme = utils.compute_rsme(data, reconstruction)
-    print(rsme)
+    rmse = utils.compute_rmse(data, reconstruction)
+    print(rmse)
     # write_chain_score(SCORE_FILE)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 

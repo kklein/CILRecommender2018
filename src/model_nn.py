@@ -60,26 +60,22 @@ def get_embeddings(data_matrix, embedding_type, embedding_dimension):
     if embedding_type == "svd":
         return svd.get_embeddings(imputed_data, embedding_dimension)
     elif embedding_type == "iterated_svd":
+        # TODO(heylook): Are the following 3 lines redundant?
         all_ratings = utils.load_ratings()
         data_matrix = utils.ratings_to_matrix(all_ratings)
         masked_data_matrix = utils.mask_validation(data_matrix)
-        _, u_embedding, z_embedding = \
-            model_iterated_svd.predict_by_svd(masked_data_matrix,
-                                              imputed_data,
-                                              embedding_dimension)
+        _, u_embedding, z_embedding = model_iterated_svd.predict_by_svd(
+            masked_data_matrix, imputed_data, embedding_dimension)
         return u_embedding, z_embedding
     elif embedding_type == "reg_sgd":
         # TODO(heylook): Choose model parameters.
-        _, u_embedding, z_embedding = \
-            model_reg_sgd.predict_by_sgd(masked_data_matrix,
-                                         embedding_dimension)
+        _, u_embedding, z_embedding = model_reg_sgd.predict_by_sgd(
+            masked_data_matrix, embedding_dimension)
         return u_embedding, z_embedding
     elif embedding_type == 'sf':
-
         # TODO(heylook): Choose model parameters.
-        _, u_embedding, z_embedding = \
-            model_sf.predict_by_sf(masked_data_matrix,
-                                        embedding_dimension)
+        _, u_embedding, z_embedding = model_sf.predict_by_sf(
+            masked_data_matrix, embedding_dimension)
         return u_embedding, z_embedding
     elif embedding_type == "pca":
         model_1 = PCA(n_components=embedding_dimension)
@@ -258,6 +254,7 @@ def main():
     np.random.seed(10)
     all_ratings = utils.load_ratings()
     data_matrix = utils.ratings_to_matrix(all_ratings)
+    # TODO(heylook): The variable masked_data_matrix remains unused.
     masked_data_matrix = utils.mask_validation(data_matrix)
     # imputed_data = utils.impute_by_novel(copy.copy(masked_data_matrix))
 

@@ -1,8 +1,8 @@
+import copy
 import os
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
-import copy
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
@@ -175,7 +175,7 @@ def impute_by_novel(data):
         np.multiply(u_matrix, np.ones(d_matrix.shape) - d_matrix)
     return data
 
-def compute_rsme(data, prediction, indices=None):
+def compute_rmse(data, prediction, indices=None):
     if indices is None:
         indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     squared_error = 0

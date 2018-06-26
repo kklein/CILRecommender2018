@@ -29,14 +29,14 @@ def main():
     utils.impute_by_avg(imputed_data, True)
     reconstruction, u_embeddings, _ =\
             predict_by_svd(masked_data, imputed_data, k)
-    rsme = utils.compute_rsme(data, reconstruction)
-    print('RSME before smoothing: %f' % rsme)
-    svd.write_svd_score(rsme, k, False, SCORE_FILE)
+    rmse = utils.compute_rmse(data, reconstruction)
+    print('rmse before smoothing: %f' % rmse)
+    svd.write_svd_score(rmse, k, False, SCORE_FILE)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
-    rsme = utils.compute_rsme(data, reconstruction)
+    rmse = utils.compute_rmse(data, reconstruction)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
-    print('RSME after smoothing: %f' % rsme)
-    svd.write_svd_score(rsme, k, True, SCORE_FILE)
+    print('rmse after smoothing: %f' % rmse)
+    svd.write_svd_score(rmse, k, True, SCORE_FILE)
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
