@@ -26,7 +26,7 @@ def main():
         u_embeddings, z_embeddings =\
                 svd.get_embeddings(reconstruction, APPROXIMATION_RANK)
         print("Executing reg sgd.")
-        reconstruction, u_embeddings = sgd.predict_by_sgd(masked_data,
+        reconstruction, u_embeddings, _ = sgd.predict_by_sgd(masked_data,
                 regularization=REG_EMB, n_epochs=N_EPOCHS,
                 u_embedding=u_embeddings, z_embedding=z_embeddings)
         utils.ampute_reconstruction(reconstruction, masked_data)

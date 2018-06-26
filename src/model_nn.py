@@ -32,6 +32,8 @@ from sklearn.metrics import mean_squared_error
 
 import numpy as np
 import model_iterated_svd
+import model_reg_sgd
+import model_sf
 import utils
 import utils_svd as svd
 
@@ -54,7 +56,7 @@ def get_embeddings(data, embedding_type, embedding_dimension):
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
         return svd.get_embeddings(data, embedding_dimension)
-    if embedding_type == "iterated_svd":
+    elif embedding_type == "iterated_svd":
         all_ratings = utils.load_ratings()
         data_matrix = utils.ratings_to_matrix(all_ratings)
         masked_data_matrix = utils.mask_validation(data_matrix)
@@ -62,7 +64,26 @@ def get_embeddings(data, embedding_type, embedding_dimension):
             model_iterated_svd.predict_by_svd(masked_data_matrix,
                                      data, embedding_dimension)
         return u_embedding, z_embedding
-
+    elif embedding_type == "reg_sgd":
+        # TODO(heylook): Those lines should not be duplicated.
+        all_ratings = utils.load_ratings()
+        data_matrix = utils.ratings_to_matrix(all_ratings)
+        masked_data_matrix = utils.mask_validation(data_matrix)
+        # TODO(heylook): Choose model parameters.
+        _, u_embedding, z_embedding = \
+            model_reg_sgd.predict_by_sgd(masked_data_matrix,
+                                        embedding_dimension)
+        return u_embedding, z_embedding
+    elif embedding_type == 'sf':
+        # TODO(heylook): Those lines should not be duplicated.
+        all_ratings = utils.load_ratings()
+        data_matrix = utils.ratings_to_matrix(all_ratings)
+        masked_data_matrix = utils.mask_validation(data_matrix)
+        # TODO(heylook): Choose model parameters.
+        _, u_embedding, z_embedding = \
+            model_sf.predict_by_sf(masked_data_matrix,
+                                        embedding_dimension)
+        return u_embedding, z_embedding
     elif embedding_type == "pca":
         model_1 = PCA(n_components=embedding_dimension)
         u_embedding = model_1.fit_transform(data)
