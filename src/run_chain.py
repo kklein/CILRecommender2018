@@ -30,7 +30,7 @@ def main():
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
     reconstruction = np.copy(masked_data)
-    utils.impute_by_novel(reconstruction)
+    utils.impute_by_variance(reconstruction)
     print('Initial imputation completed.')
     for i in range(n_meta_epochs):
         print("Computing embeddings.")
@@ -39,7 +39,7 @@ def main():
         print("Executing sgd by sf.")
         predictions, u_embeddings, z_embeddings = sf.predict_by_sf(
             masked_data, reg_emb=REG_EMB, reg_bias=REG_BIAS, n_epochs=N_EPOCHS,
-            u_embedding=u_embeddings, z_embedding=z_embeddings)
+            u_embeddings=u_embeddings, z_embeddings=z_embeddings)
         reconstruction = np.dot(u_embeddings, z_embeddings.T)
         utils.ampute_reconstruction(reconstruction, masked_data)
         rmse = utils.compute_rmse(data, reconstruction)

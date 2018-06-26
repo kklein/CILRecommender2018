@@ -54,7 +54,7 @@ def get_embeddings(data_matrix, embedding_type, embedding_dimension):
     :return:
     """
     masked_data_matrix = utils.mask_validation(data_matrix)
-    imputed_data = utils.impute_by_novel(copy.copy(masked_data_matrix))
+    imputed_data = utils.impute_by_variance(copy.copy(masked_data_matrix))
 
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
@@ -256,7 +256,7 @@ def main():
     data_matrix = utils.ratings_to_matrix(all_ratings)
     # TODO(heylook): The variable masked_data_matrix remains unused.
     masked_data_matrix = utils.mask_validation(data_matrix)
-    # imputed_data = utils.impute_by_novel(copy.copy(masked_data_matrix))
+    # imputed_data = utils.impute_by_variance(copy.copy(masked_data_matrix))
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"

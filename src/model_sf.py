@@ -188,7 +188,7 @@ def main():
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
-        utils.impute_by_novel(imputed_data)
+        utils.impute_by_variance(imputed_data)
         u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, rank)
         reconstruction, u_embeddings, _ = predict_by_sf(
             masked_data, rank, reg_emb, reg_bias, u_embeddings, z_embeddings)
