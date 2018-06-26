@@ -1,9 +1,19 @@
 import subprocess
 
-for embedding_dimensions in range(10,200,10):
-    for embedding_type in ["iterated_svd", "svd", "ids", "nmf", "lle", "pca"]:
-        hidden_layer_width = int(embedding_dimensions / 2)
-        for architecture in [(int(embedding_dimensions / 2),), (int(embedding_dimensions / 2), int(embedding_dimensions / 4)), (int(embedding_dimensions / 2),int(embedding_dimensions / 4),int(embedding_dimensions / 8))]:
+EMBEDDING_TYPES = ["iterated_svd", "svd", "ids", "nmf", "lle", "pca"]
 
-            args = ["bsub", "-R", "rusage[mem=6000]", "python", "model_nn.py", embedding_type, str(embedding_dimensions), str(architecture), "1500000","0.0001"]
+for n_features in range(10, 200, 10):
+    architectures = [
+        (int(n_features / 2),),
+        (int(n_features / 2), int(n_features / 4)),
+        (int(n_features / 2), int(n_features / 4), int(n_features / 8))]
+    for embedding_type in EMBEDDING_TYPES:
+        # TODO(heylook): Unused variable. Piece of legacy code or missing
+        # functionality?
+        hidden_layer_width = int(n_features / 2)
+        for architecture in architectures:
+            args = [
+                "bsub", "-R", "rusage[mem=6000]", "python", "model_nn.py",
+                embedding_type, str(n_features), str(architecture),
+                "1500000", "0.0001"]
             subprocess.Popen(args)
