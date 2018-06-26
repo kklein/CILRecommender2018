@@ -34,20 +34,20 @@ def main():
     print('Initial imputation completed.')
     for i in range(n_meta_epochs):
         print("Computing embeddings.")
-        u_embeddings, z_embeddings =\
-                svd.get_embeddings(reconstruction, approximation_rank)
+        u_embeddings, z_embeddings = svd.get_embeddings(
+            reconstruction, approximation_rank)
         print("Executing sgd by sf.")
-        predictions, u_embeddings, z_embeddings = sf.predict_by_sf(masked_data,
-                reg_emb=REG_EMB, reg_bias=REG_BIAS, n_epochs=N_EPOCHS,
-                u_embedding=u_embeddings, z_embedding=z_embeddings)
+        predictions, u_embeddings, z_embeddings = sf.predict_by_sf(
+            masked_data, reg_emb=REG_EMB, reg_bias=REG_BIAS, n_epochs=N_EPOCHS,
+            u_embedding=u_embeddings, z_embedding=z_embeddings)
         reconstruction = np.dot(u_embeddings, z_embeddings.T)
         utils.ampute_reconstruction(reconstruction, masked_data)
-        rsme = utils.compute_rsme(data, reconstruction)
-        print("meta iteration %d val. rsme: %f" % (i, rsme))
+        rmse = utils.compute_rmse(data, reconstruction)
+        print("meta iteration %d val. rmse: %f" % (i, rmse))
     reconstruction = utils.knn_smoothing(predictions, u_embeddings)
-    rsme = utils.compute_rsme(data, reconstruction)
-    print("RSME after smoothing: %f" % rsme)
-    write_chain_score(approximation_rank, n_meta_epochs, rsme)
+    rmse = utils.compute_rmse(data, reconstruction)
+    print("rmse after smoothing: %f" % rmse)
+    write_chain_score(approximation_rank, n_meta_epochs, rmse)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':

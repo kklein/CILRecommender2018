@@ -10,9 +10,9 @@ def get_embeddings(imputed_data, approximation_rank):
     u_embeddings = u_embeddings[:, 0:approximation_rank]
     z_embeddings = z_embeddings[0:approximation_rank, :]
     singular_values = singular_values[:approximation_rank]
-    s = np.zeros((approximation_rank, approximation_rank))
-    np.fill_diagonal(s, np.sqrt(singular_values))
-    u_embeddings = np.matmul(u_embeddings, s)
-    z_embeddings = np.matmul(s, z_embeddings)
+    singular_values_sqrt = np.zeros((approximation_rank, approximation_rank))
+    np.fill_diagonal(singular_values_sqrt, np.sqrt(singular_values))
+    u_embeddings = np.matmul(u_embeddings, singular_values_sqrt)
+    z_embeddings = np.matmul(singular_values_sqrt, z_embeddings)
     z_embeddings = z_embeddings.T
     return u_embeddings, z_embeddings

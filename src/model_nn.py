@@ -44,7 +44,7 @@ SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/nn_scores_24.csv')
 ENSEMBLE = False
 
 
-def get_embeddings(data, embedding_type, embedding_dimension):
+def get_embeddings(data_matrix, embedding_type, embedding_dimension):
     """Given imputed data, an embedding type and dimensionality, this
     function returns u embeddings and z embeddings.
 
@@ -53,52 +53,45 @@ def get_embeddings(data, embedding_type, embedding_dimension):
     :param embedding_dimension:
     :return:
     """
+    masked_data_matrix = utils.mask_validation(data_matrix)
+    imputed_data = utils.impute_by_novel(copy.copy(masked_data_matrix))
+
     print("Getting embeddings using {0}".format(embedding_type))
     if embedding_type == "svd":
-        return svd.get_embeddings(data, embedding_dimension)
+        return svd.get_embeddings(imputed_data, embedding_dimension)
     elif embedding_type == "iterated_svd":
+        # TODO(heylook): Are the following 3 lines redundant?
         all_ratings = utils.load_ratings()
         data_matrix = utils.ratings_to_matrix(all_ratings)
         masked_data_matrix = utils.mask_validation(data_matrix)
-        _, u_embedding, z_embedding = \
-            model_iterated_svd.predict_by_svd(masked_data_matrix,
-                                     data, embedding_dimension)
+        _, u_embedding, z_embedding = model_iterated_svd.predict_by_svd(
+            masked_data_matrix, imputed_data, embedding_dimension)
         return u_embedding, z_embedding
     elif embedding_type == "reg_sgd":
-        # TODO(heylook): Those lines should not be duplicated.
-        all_ratings = utils.load_ratings()
-        data_matrix = utils.ratings_to_matrix(all_ratings)
-        masked_data_matrix = utils.mask_validation(data_matrix)
         # TODO(heylook): Choose model parameters.
-        _, u_embedding, z_embedding = \
-            model_reg_sgd.predict_by_sgd(masked_data_matrix,
-                                        embedding_dimension)
+        _, u_embedding, z_embedding = model_reg_sgd.predict_by_sgd(
+            masked_data_matrix, embedding_dimension)
         return u_embedding, z_embedding
     elif embedding_type == 'sf':
-        # TODO(heylook): Those lines should not be duplicated.
-        all_ratings = utils.load_ratings()
-        data_matrix = utils.ratings_to_matrix(all_ratings)
-        masked_data_matrix = utils.mask_validation(data_matrix)
         # TODO(heylook): Choose model parameters.
-        _, u_embedding, z_embedding = \
-            model_sf.predict_by_sf(masked_data_matrix,
-                                        embedding_dimension)
+        _, u_embedding, z_embedding = model_sf.predict_by_sf(
+            masked_data_matrix, embedding_dimension)
         return u_embedding, z_embedding
     elif embedding_type == "pca":
         model_1 = PCA(n_components=embedding_dimension)
-        u_embedding = model_1.fit_transform(data)
-        z_embedding = model_1.fit_transform(data.T)
+        u_embedding = model_1.fit_transform(imputed_data)
+        z_embedding = model_1.fit_transform(imputed_data.T)
         return u_embedding, z_embedding
     elif embedding_type == "lle":
         model = LocallyLinearEmbedding()
-        u_embedding = model.fit_transform(data)
-        z_embedding = model.fit_transform(data.T)
+        u_embedding = model.fit_transform(imputed_data)
+        z_embedding = model.fit_transform(imputed_data.T)
         return u_embedding, z_embedding
     elif embedding_type == "ids":
-        uid_dimensions = len(str(data.shape[0])) - 1
-        iid_dimensions = len(str(data.shape[1])) - 1
-        u_embedding = np.zeros((data.shape[0], uid_dimensions))
-        z_embedding = np.zeros((data.shape[1], iid_dimensions))
+        uid_dimensions = len(str(imputed_data.shape[0])) - 1
+        iid_dimensions = len(str(imputed_data.shape[1])) - 1
+        u_embedding = np.zeros((imputed_data.shape[0], uid_dimensions))
+        z_embedding = np.zeros((imputed_data.shape[1], iid_dimensions))
 
         for i in range(u_embedding.shape[0]):
             u_embedding[i] = i
@@ -112,11 +105,11 @@ def get_embeddings(data, embedding_type, embedding_dimension):
         if embedding_type == "nmf":
             model = NMF(n_components=embedding_dimension, init='random',
                         random_state=0)
-            data = utils.clip(data)
+            imputed_data = utils.clip(imputed_data)
         elif embedding_type == "fa":
             model = FactorAnalysis(n_components=embedding_dimension)
 
-        u_embedding = model.fit_transform(data)
+        u_embedding = model.fit_transform(imputed_data)
         z_embedding = model.components_
         return u_embedding, z_embedding.T
 
@@ -216,12 +209,11 @@ def write_nn_score(score, embedding_type, embedding_dimensions,
                                                            alpha))
 
 
-def predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier):
+def predict_by_nn(data_matrix, nn_configuration, classifier):
     """ Given data matrix as constructed from original input, imputed data as
     obtained through preprocessing, a nn_configuration and a classifier, this
     function returns a vector of predictions for unobserved entries.
     :param data_matrix:
-    :param imputed_data:
     :param nn_configuration:
     :param classifier:
     :return:
@@ -231,7 +223,7 @@ def predict_by_nn(data_matrix, imputed_data, nn_configuration, classifier):
 
     # Get embeddings
     print("Getting embeddings of dimension: {0}".format(embedding_dimensions))
-    user_embeddings, item_embeddings = get_embeddings(imputed_data,
+    user_embeddings, item_embeddings = get_embeddings(data_matrix,
                                                       embedding_type,
                                                       embedding_dimensions)
 
@@ -262,8 +254,9 @@ def main():
     np.random.seed(10)
     all_ratings = utils.load_ratings()
     data_matrix = utils.ratings_to_matrix(all_ratings)
+    # TODO(heylook): The variable masked_data_matrix remains unused.
     masked_data_matrix = utils.mask_validation(data_matrix)
-    imputed_data = utils.impute_by_novel(copy.copy(masked_data_matrix))
+    # imputed_data = utils.impute_by_novel(copy.copy(masked_data_matrix))
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"
@@ -283,13 +276,13 @@ def main():
         architecture = (5,)
         nn_configuration = ("svd", 10, architecture, n_training_samples, alpha)
         classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_1 = predict_by_nn(data_matrix, imputed_data,
+        prediction_1 = predict_by_nn(data_matrix,
                                      nn_configuration, classifier)
         print(prediction_1[:100])
         architecture = (50,)
         nn_configuration = ("nmf", 100, architecture, n_training_samples, alpha)
         classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_2 = predict_by_nn(data_matrix, imputed_data,
+        prediction_2 = predict_by_nn(data_matrix,
                                      nn_configuration, classifier)
         prediction = np.mean([prediction_1, prediction_2], axis=0)
         print(prediction_2[:100])
@@ -302,7 +295,7 @@ def main():
                             architecture, n_training_samples,
                             alpha)
         classifier = MLPRegressor(architecture, alpha=alpha, warm_start=False)
-        prediction = predict_by_nn(data_matrix, imputed_data,
+        prediction = predict_by_nn(data_matrix,
                                    nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
 
