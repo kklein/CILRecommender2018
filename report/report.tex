@@ -38,7 +38,7 @@ Many online businesses face the difficult yet crucial challenge of finding the m
 Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. 
 
     
-Traditionally, k-nearest neighbour approaches have been applied to this problem. That is, the ratings of the most similar users or items are exploited to infer the rating for a given user and item \cite{sarwar2001item}.
+Traditionally, k-nearest neighbour approaches have been applied to this problem. In these algorithms, the ratings of the most similar users or items are exploited to infer the rating for a given user and item \cite{sarwar2001item}.
 
 Recently, the most popular approach has been to represent users and items  as vectors in a shared, low-dimensional latent space intended to capture the hidden factors influencing the users' preferences. These embedding may be obtained and then combined in a linear fashion using matrix factorization techniques \cite{koren2009matrix}, or in a non-linear way using Neural Networks
 \cite{he2017neural}.
