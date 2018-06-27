@@ -8,7 +8,6 @@ by e.g. `$python src/model_sf.py`. Different models have different optional
 parameters.
 The 'src/run_*.py' focus on one particular composition and execution of models.
 
-
 ## How to run stuff in neural collaborative filtering
 
 ### Setting up the virtual environment
