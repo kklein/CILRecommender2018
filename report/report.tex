@@ -36,10 +36,13 @@
 
 Many online businesses face the difficult yet crucial challenge of finding the most relevant products out of a enormous set of options for each of their users. Providing better recommendations, such as suggesting a movie on Netflix or a product on Amazon that a user might like, has been found to be linked to increased sales, an increase in consumer surplus and competitive advantages \cite{hinz2010impact}.
 Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. 
-One popular approach in collaborative filtering has been to use matrix factorization techniques. Here, users and items are represented as vectors in a shared, low-dimensional latent space intended to capture the hidden factors influencing the users' preferences \cite{koren2009matrix}. By calculating the inner product of a user embedding and an item embedding one can obtain the estimated preference of the user for the item. ((Summarize the matrix factorization work, that we use. Regularized svd, sgd, simon funk.))
 
-Recently, He et al.\ \cite{he2017neural} have employed deep neural networks to model the interaction between users and items, arguing that the linear interactions provided by matrix factorization techniques are overly restrictive.
-For the final result, recommendations produced by the neural network are combined with recommendations obtained from a simple matrix factorization component.
+    
+Traditionally, k-nearest neighbour approaches have been applied to this problem. That is, the ratings of the most similar users or items are exploited to infer the rating for a given user and item \cite{sarwar2001item}.
+
+Recently, the most popular approach has been to represent users and items  as vectors in a shared, low-dimensional latent space intended to capture the hidden factors influencing the users' preferences. These embedding may be obtained and then combined in a linear fashion using matrix factorization techniques \cite{koren2009matrix}, or in a non-linear way using Neural Networks
+\cite{he2017neural}.
+
 
 ((Summarize work on ensemble method we use.))
 
@@ -50,7 +53,7 @@ We draw on and improve previous work by proposing an approach which applies a st
 Our main contributions are thus the following: 
 \begin{enumerate}
     \item ((Kevin's bit on MF techniques.))
-    \item Following the idea of pretraining neural networks, we use existing embeddings as input for our neural network We obtain embeddings using a number of different methods which are then used as input of a feed-forward neural network to model nonlinear interactions between the users and the items. 
+    \item Following the idea of pretraining neural networks, we use existing embeddings as input for our neural network. We obtain embeddings using a number of different methods which are then used as input of a feed-forward neural network to model nonlinear interactions between the users and the items. 
     \item ((Ben's bit on ensemble methods))
 \end{enumerate}
 
@@ -61,18 +64,19 @@ Our main contributions are thus the following:
 
 \subsection{Task}
 
-The specific task we address is the following. Given a set of ratings $\mathcal{R}$, where $r_{ij} \in \mathcal{R}$ is the rating of user $i$ for movie $j$, $r_{ij} \in [1 \dots 5]$, $i \in [1 \dots 10000]$ and $j \in [1 \dots 1000]$ ((Does this formulation mean that all i,j in the ranges are in R?)). Out of the $10000 \times 1000$ possible ratings, we observe around 10\% ((Look this up)). 
+The specific task we address is the following.
+We are given a set of observed ratings $\mathcal{R}$. For $(u, i, r_{ui}) \in \mathcal{R}$, $u \in [1\dots10000]$ is a user id, $i \in [1\dots1000]$  is an item id and $r_{ui} \in [1\dots5]$ the rating of the user for this item. $\mathcal{R}$ contains 11.8\% of all possible ratings. 
 
-The goal is to predict $ \widehat{ \mathcal{R}}$ where  $\widehat{r}_{i'j'} \in \widehat{\mathcal{R}} \rightarrow \hat r_{ij} \not\in \mathcal{R}$. 
-
-((@Ben: Please extend this with some of the data analysis results that you got.))
+Furthermore, we are given a test set $\mathcal{T}$, where $(u,i) \in \mathcal{T}$ are unobserved tuples of user and item ids for which we want to infer the ratings
 
 The goal of this task is to minimize the Root Mean Squared Error (RMSE) given by:
 \begin{equation}
-RMSE = \sqrt{\frac{1}{|T|}\sum_{(u, i) \in T} (y_{u,i} -\widehat{y}_{u,i})^2}    
+RMSE = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(u, i) \in \mathcal{T}} (r_{u,i} -\widehat{r}_{u,i})^2}    
 \end{equation}
 
-where $T$ is a test set of ratings in which $y_{u, i}$ is the rating of user $u$ for movie $i$ and $\hat y_{u,i}$ the corresponding prediction. 
+where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{u,i}$ the corresponding prediction. 
+
+((@Ben: Please extend this with some of the data analysis results that you got.))
 
 \subsection{Preprocessing}
 
@@ -114,7 +118,7 @@ In particular the neural network model used is the following:
 where $a_i,\bf{W_i}, \bf{b_i}$, denote the i-th layer's activation function, weights and bias respectively. With $\bf{e_i}$ and $\bf{e_u}$ we denote the embedding vectors for the users and items respectively. We use the rectifier (ReLU) activation function, which has been found to frequently yield superior results as compared to the traditionally used sigmoid and tanh functions \cite{glorot2011deep}.
 
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \caption{Validation Results of Neural Network Models}
 \label{table:neural_net_models}
