@@ -9,7 +9,7 @@ import xgboost as xgb
 
 import utils
 import model_reg_sgd
-import model_svd
+import model_iterated_svd
 
 # This file is meant as a template. Feel free to change, replace or copy.
 # TODO(b-hahn): Define and use meaningful naming scheme.
@@ -17,7 +17,7 @@ SUBMISSION_FILE = os.path.join(
     utils.ROOT_DIR, 'data/ensemble' +
     datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 ENSEMBLE_INPUT_DIR = 'data/stacking'
-STACKING_METHOD = 'nn'
+STACKING_METHOD = 'lr'
 
 
 def run_stacked_svd():
@@ -92,7 +92,7 @@ def run_stacked_svd():
     print(lvl2_predictions)
 
 #     reconstruction = predict_by_sgd(masked_data, k, regularization)
-#     rsme = utils.compute_rsme(data, reconstruction)
+#     rmse = utils.compute_rmse(data, reconstruction)
 
 def generate_debug_predictions():
     all_ratings = utils.load_ratings()
@@ -113,12 +113,18 @@ def stacking(meta_training, meta_validation):
     validation_ratings_predictions = np.squeeze(
         [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
     # validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
+    test_indices = utils.get_indices_to_predict()
+    test_ratings_predictions = load_predictions_from_files("sub")
+    test_ratings_predictions = np.squeeze(
+        [[rating[i, j] for rating in test_ratings_predictions] for i, j in test_indices])
+    print("test_ratings: ", test_ratings_predictions.shape)
 
     if STACKING_METHOD == 'lr':
         # using linear regression
         weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
         print("Weights: {}\tres: {}".format(weights, res))
-        lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+        lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
+        lvl2_test = np.dot(weights, test_ratings_predictions.T)
     # TODO: could try lr with predictions split into bins according to movie/ user support 
     # (i.e. separetly weight users with many ratings vs those with few ratings)
 
@@ -126,36 +132,41 @@ def stacking(meta_training, meta_validation):
         # using polynomial regression
         weights, res, _, _ = np.polyfit(train_ratings_predictions, train_ratings_target, deg=2, full=True)
         print("Weights: {}\tres: {}".format(weights, res))
-        lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+        lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
 
     elif STACKING_METHOD == 'nn':
         # using a neural net
         regressor = MLPRegressor(hidden_layer_sizes=(50, 100))
         regressor.fit(X=train_ratings_predictions, y=train_ratings_target)
-        lvl2_predictions = regressor.predict(X=validation_ratings_predictions)
+        lvl2_validation = regressor.predict(X=validation_ratings_predictions)
 
     elif STACKING_METHOD == "xgb":
         # using xgboost
         regressor = xgb.XGBRegressor(max_depth=4, learning_rate=0.8, n_estimators=100, eta=0.99)
         regressor.fit(train_ratings_predictions, train_ratings_target)
-        lvl2_predictions = regressor.predict(validation_ratings_predictions)
+        lvl2_validation = regressor.predict(validation_ratings_predictions)
 
     elif STACKING_METHOD == "kr":
         # kernel ridge regression
         regressor = KernelRidge()
         regressor.fit(train_ratings_predictions, train_ratings_target)
-        lvl2_predictions = regressor.predict(validation_ratings_predictions)
+        lvl2_validation = regressor.predict(validation_ratings_predictions)
 
-    lvl2_predictions = utils.ratings_to_matrix([(validation_indices[i][0], validation_indices[i][1],
-                                                 lvl2_predictions[i]) for i in range(len(validation_indices))])
-    print(lvl2_predictions[:10])
-    lvl2_predictions = utils.clip(lvl2_predictions)
-
-    rmse = utils.compute_rsme(ground_truth_ratings, lvl2_predictions, validation_indices)
+    lvl2_validation = utils.ratings_to_matrix([(validation_indices[i][0], validation_indices[i][1],
+                                                lvl2_validation[i]) for i in range(len(validation_indices))])
+    print(lvl2_validation[:10])
+    lvl2_validation = utils.clip(lvl2_validation)
+    rmse = utils.compute_rmse(ground_truth_ratings,
+                              lvl2_validation, validation_indices)
     print("lvl2_predictions rmse:", rmse)
-    utils.reconstruction_to_predictions(lvl2_predictions, SUBMISSION_FILE, validation_indices)
-    print("Predictions saved in {}".format(SUBMISSION_FILE))
-    utils.reconstruction_to_predictions(ground_truth_ratings, utils.ROOT_DIR + "gt_data.csv", validation_indices)
+    # utils.reconstruction_to_predictions(lvl2_predictions, SUBMISSION_FILE, validation_indices)
+    submission_predictions = utils.ratings_to_matrix([(test_indices[i][0], test_indices[i][1],
+                                                       lvl2_test[i]) for i in range(len(test_indices))])
+    submission_predictions = utils.clip(submission_predictions)
+    utils.reconstruction_to_predictions(
+        submission_predictions, SUBMISSION_FILE, test_indices)
+    print("Submission predictions saved in {}".format(SUBMISSION_FILE))
+    # utils.reconstruction_to_predictions(ground_truth_ratings, utils.ROOT_DIR + "gt_data.csv", validation_indices)
 
 
 def bagging(n):
@@ -215,7 +226,7 @@ def bagging(n):
     #    print(np.unique(np.concatenate(predictions, axis=0), axis=0).shape[0])
     print(np.sum(np.count_nonzero(np.sum(predictions, axis=0), axis=1) > 0))
     mean_predictions = compute_mean_predictions(predictions)
-    rmse = utils.compute_rsme(data, mean_predictions)
+    rmse = utils.compute_rmse(data, mean_predictions)
     print("mean_predictions rmse:", rmse)
     utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
     print("Predictions saved in {}".format(SUBMISSION_FILE))
@@ -260,7 +271,7 @@ def main():
     # all_ratings = utils.load_ratings()
     # data = utils.ratings_to_matrix(all_ratings)
     # mean_predictions = compute_mean_predictions(load_predictions_from_files())
-    # rmse = utils.compute_rsme(data, mean_predictions)
+    # rmse = utils.compute_rmse(data, mean_predictions)
     # print("mean_predictions rmse:", rmse)
     # utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
     # print("Predictions saved in {}".format(SUBMISSION_FILE))

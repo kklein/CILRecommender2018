@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 import numpy as np
 import utils
 import utils_svd as svd
@@ -35,16 +36,18 @@ def main():
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
     rmse = utils.compute_rmse(data, reconstruction)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_training_svd_stacking.csv', indices_to_predict=utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_first.csv"))
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_validation_svd_stacking.csv', indices_to_predict=utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_second.csv"))
     print('rmse after smoothing: %f' % rmse)
     svd.write_svd_score(rmse, k, True, SCORE_FILE)
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_training_iterated_svd_stacking' +
+        datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
+    utils.reconstruction_to_predictions(
+        reconstruction,
+        utils.ROOT_DIR + 'data/meta_validation_iterated_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+        '.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
     # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 
