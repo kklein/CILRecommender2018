@@ -51,7 +51,7 @@ Recently, the most popular approach has been to represent users and items  as ve
 \cite{he2017neural}.
 
 
-((Summarize work on ensemble method we use.))
+% TODO(benjamin-hahn): Give one or two sentence pitch on ensemlbe methods.
 
 
 
@@ -59,9 +59,9 @@ We draw on and improve previous work by proposing an approach which applies a st
 
 Our main contributions are thus the following: 
 \begin{enumerate}
-    \item ((Kevin's bit on MF techniques.))
+    \item % TODO(kkleindev): Summarise our contribution w.r.t. MF techniques.
     \item Following the idea of pretraining neural networks, we use existing embeddings as input for our neural network. We obtain embeddings using a number of different methods which are then used as input of a feed-forward neural network to model nonlinear interactions between the users and the items. 
-    \item ((Ben's bit on ensemble methods))
+    \item %TODO(benjamin-hahn): Summarise our contribution w.r.t ensemble methods. 
 \end{enumerate}
 
 
@@ -80,7 +80,7 @@ RMSE = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(u, i) \in \mathcal{T}} (r_{u,i} -\wid
 
 where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{u,i}$ the corresponding prediction.
 %TODO(?): Decide whether we actually want to give intuition for RMSE. In an acutal paper we would out ourselves as N00Bs by doing so ;)
-Intuitively this is a measure of how much our predictions deviate from the true ratings on average, while penalising large errors more strongly than small errors. 
+Intuitively, this is a measure of how much our predictions deviate from the true ratings on average, while penalising large errors more strongly than small errors. 
 
 %TODO(benjamin-hahn): Extend this with some of the data analysis results that you got.
 
@@ -136,7 +136,7 @@ A more sophisticated idea is to compute how much the average rating for a given 
 Given these biases, we then compute the initialization for an unobserved rating $r_{ij}$ as $r_{ij} = \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j} + user\_bias_i + movie\_bias_j$.
 
 \subsubsection{"Novel init"}
-((Decide whether and in what form we want to include this based on results we get.))
+% TODO(?): Decide whether and in what form we want to include this based on results we get.
 
 \subsection{Core}
 \subsubsection{Matrix Factorization}
@@ -171,7 +171,8 @@ RMSE & 1.117           & 0.993   & 0.997           & 1.08   & 0.995   \\ \hline
 \end{table}
 
 Using grid search in the, we find hyperparameters yielding the best results on the validation set (see table \ref{table:neural_net_models}). 
-With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.((Into how much detail do we need to go here?))
+With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.
+% TODO(heylook): Into how much detail do we need to go here?
 
 
 
