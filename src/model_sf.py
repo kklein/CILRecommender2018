@@ -166,7 +166,7 @@ def predict_by_sf(data, approximation_rank=None, reg_emb=REG_EMB,
         data, u_embeddings, z_embeddings, u_bias, z_bias, n_epochs, reg_emb,
         reg_bias)
     utils.clip(reconstruction)
-    return reconstruction, u_embeddings, z_embeddings
+    return reconstruction, u_embeddings, z_embeddings, u_bias, z_bias
 
 def main():
     # k = int(sys.argv[1])
@@ -190,7 +190,7 @@ def main():
         imputed_data = np.copy(masked_data)
         utils.impute_by_variance(imputed_data)
         u_embeddings, z_embeddings = svd.get_embeddings(imputed_data, rank)
-        reconstruction, u_embeddings, _ = predict_by_sf(
+        reconstruction, u_embeddings, _, _, _ = predict_by_sf(
             masked_data, rank, reg_emb, reg_bias, u_embeddings, z_embeddings)
     else:
         initialization_string = 'rand'
