@@ -4,7 +4,7 @@ by using neural network model on top of user and item embeddings.
 
 Example:
     Call this module as follows.
-        $ python nn.py iterated_svd 20 "(10,)" 1000000 0.0001
+        $ python model_nn.py iterated_svd 20 "(10,)" 1000000 0.0001
     In this example predictions will be generated on top of 20 dimensional
     iterated svd embeddings, using a neural network with a single 10 node
     wide layer, 1000000 training samples and a regularization parameter of
@@ -60,10 +60,6 @@ def get_embeddings(data_matrix, embedding_type, embedding_dimension):
     if embedding_type == "svd":
         return svd.get_embeddings(imputed_data, embedding_dimension)
     elif embedding_type == "iterated_svd":
-        # TODO(heylook): Are the following 3 lines redundant?
-        all_ratings = utils.load_ratings()
-        data_matrix = utils.ratings_to_matrix(all_ratings)
-        masked_data_matrix = utils.mask_validation(data_matrix)
         _, u_embedding, z_embedding = model_iterated_svd.predict_by_svd(
             masked_data_matrix, imputed_data, embedding_dimension)
         return u_embedding, z_embedding
@@ -254,9 +250,6 @@ def main():
     np.random.seed(10)
     all_ratings = utils.load_ratings()
     data_matrix = utils.ratings_to_matrix(all_ratings)
-    # TODO(heylook): The variable masked_data_matrix remains unused.
-    masked_data_matrix = utils.mask_validation(data_matrix)
-    # imputed_data = utils.impute_by_variance(copy.copy(masked_data_matrix))
 
     if len(sys.argv) == 1:
         embedding_type = "nmf"
