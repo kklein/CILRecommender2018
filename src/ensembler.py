@@ -119,6 +119,8 @@ def stacking(meta_training, meta_validation):
         weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
         print("Weights: {}\tres: {}".format(weights, res))
         lvl2_predictions = np.dot(weights, validation_ratings_predictions.T)
+    # TODO: could try lr with predictions split into bins according to movie/ user support 
+    # (i.e. separetly weight users with many ratings vs those with few ratings)
 
     elif STACKING_METHOD == 'pr':
         # using polynomial regression

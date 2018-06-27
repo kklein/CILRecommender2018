@@ -127,7 +127,7 @@ def main():
 
 
 
-    # utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
 
 if __name__ == '__main__':
     main()
