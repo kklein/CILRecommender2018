@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 from sklearn import ensemble
 from sklearn.neural_network import MLPRegressor
+from sklearn.kernel_ridge import KernelRidge
 import xgboost as xgb
 
 import utils
@@ -137,6 +138,12 @@ def stacking(meta_training, meta_validation):
         regressor.fit(train_ratings_predictions, train_ratings_target)
         lvl2_predictions = regressor.predict(validation_ratings_predictions)
 
+    elif STACKING_METHOD == "kr":
+        # kernel ridge regression
+        regressor = KernelRidge()
+        regressor.fit(train_ratings_predictions, train_ratings_target)
+        lvl2_predictions = regressor.predict(validation_ratings_predictions)
+
     lvl2_predictions = utils.ratings_to_matrix([(validation_indices[i][0], validation_indices[i][1],
                                                  lvl2_predictions[i]) for i in range(len(validation_indices))])
     print(lvl2_predictions[:10])
@@ -210,6 +217,16 @@ def bagging(n):
     print("mean_predictions rmse:", rmse)
     utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
     print("Predictions saved in {}".format(SUBMISSION_FILE))
+    utils.reconstruction_to_predictions(
+        mean_predictions,
+        utils.ROOT_DIR + 'data/meta_training_bagging_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/train_valid_80_10_10/validationIndices_first.csv"))
+    utils.reconstruction_to_predictions(
+        mean_predictions,
+        utils.ROOT_DIR + 'data/meta_validation_bagging_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+        '.csv',
+        indices_to_predict=utils.get_validation_indices(
+            utils.ROOT_DIR + "data/train_valid_80_10_10/validationIndices_second.csv"))
 
 
 def load_predictions_from_files(file_prefix='submission_'):
