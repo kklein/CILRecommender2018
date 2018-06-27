@@ -1,8 +1,8 @@
+import copy
 import os
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
-import copy
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
@@ -17,6 +17,7 @@ ITEM_COUNT = 1000
 USER_COUNT = 10000
 WEIGHT_KNN = 0.001
 N_NEIGHBORS = 3
+USER_COUNT_WEIGHT = 10
 
 def load_ratings(data_file = DATA_FILE):
     """Loads the rating data from the specified file.
@@ -45,11 +46,9 @@ def load_ratings(data_file = DATA_FILE):
 def ratings_to_matrix(ratings):
     matrix_rows = USER_COUNT
     matrix_cols = ITEM_COUNT
-    print("Building [%d x %d] rating matrix." % (matrix_rows, matrix_cols))
     matrix = np.zeros([matrix_rows, matrix_cols])
-    for (row, col, rating) in ratings:
+    for row, col, rating in ratings:
         matrix[row, col] = rating
-    print("Finished building rating matrix.")
     return matrix
 
 def mask_validation(data):
@@ -105,10 +104,9 @@ def write_ratings(predictions, submission_file):
 
 
 def reconstruction_to_predictions(reconstruction, submission_file, indices_to_predict=get_indices_to_predict()):
-    # TODO(ben): remove default argument
-    predictions = list(map(lambda t: \
-            (t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]]), \
-            indices_to_predict))
+    enumerate_predictions = lambda t: (
+        t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]])
+    predictions = list(map(enumerate_predictions, indices_to_predict))
     write_ratings(predictions, submission_file)
 
 def clip(data):
@@ -147,37 +145,35 @@ def impute_by_bias(data):
                 data[row_index, col_index] = new_value
     return data
 
-def impute_by_novel(data):
+def impute_by_variance(data):
     global_average = np.sum(data) / np.count_nonzero(data)
     global_variance = np.var(data[data != 0])
 
     m = np.zeros((data.shape[1],))
     for i in range(data.shape[1]):
-        ratings = data[:, i]
-        ratings = ratings[ratings != 0]
-        movie_variance = np.var(ratings)
+        movie_ratings = data[:, i]
+        movie_ratings = movie_ratings[movie_ratings != 0]
+        movie_variance = np.var(movie_ratings)
         k = movie_variance / global_variance
-        m[i] = (global_average * k + np.sum(ratings)) /\
-               (k + np.count_nonzero(ratings))
+        m[i] = (global_average * k + np.sum(movie_ratings)) /\
+               (k + np.count_nonzero(movie_ratings))
 
     u = np.zeros((data.shape[0],))
     for i in range(data.shape[0]):
         user_ratings = data[i]
         diff = m - user_ratings
         r = diff[user_ratings != 0]
-        k = np.var(r) / global_variance
+        user_variance = np.var(r)
+        k = user_variance / global_variance
         u[i] = (global_average * k + sum(r)) / (k + np.count_nonzero(r))
-        # if u[i] < -1 or u[i] > 6:
-        #     print(u[i])
 
-    w = 10.0
     user_counts = np.count_nonzero(data, axis=1)
     movie_counts = np.count_nonzero(data, axis=0)
 
     movie_count_matrix = np.tile(movie_counts, (len(user_counts), 1))
     user_count_matrix = np.tile(user_counts, (len(movie_counts), 1)).T
-    combined_matrix = \
-        copy.copy(movie_count_matrix) + w * copy.copy(user_count_matrix)
+    combined_matrix = copy.copy(
+        movie_count_matrix) + USER_COUNT_WEIGHT * copy.copy(user_count_matrix)
     d_matrix = np.divide(movie_count_matrix, combined_matrix)
 
     m_matrix = np.tile(m, (len(u), 1))
@@ -187,7 +183,7 @@ def impute_by_novel(data):
         np.multiply(u_matrix, np.ones(d_matrix.shape) - d_matrix)
     return data
 
-def compute_rsme(data, prediction, indices=None):
+def compute_rmse(data, prediction, indices=None):
     if indices is None:
         indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     squared_error = 0
