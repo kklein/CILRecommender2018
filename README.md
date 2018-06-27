@@ -19,3 +19,5 @@ Execute the following steps on the euler cluster:
 5. Tell keras to use Theano as backend by editing ~/.keras/keras.json. Set "backend": "theano".
 
 Refer to the README of neural_collaborative_filtering to see how to run things.
+You might run `python NeuMF.py --dataset cil --epochs 20 --batch_size 256 --num_factors
+ 8 --layers [10] --reg_mf 0 --reg_layers [0] --num_neg 0 --lr 0.001 --learner adam --verbose 1 --out 1` for instance. Submissions are stored in `neural_collaborative_filtering/Data`.

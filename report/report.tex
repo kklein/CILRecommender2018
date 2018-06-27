@@ -41,10 +41,8 @@
 
 \section{Introduction}
 
-%TODO(heylook): Explicitly mention that we don't/can't use content information for recommendations. Only meta data.
-
 Many online businesses face the difficult yet crucial challenge of finding the most relevant products out of a enormous set of options for each of their users. Providing better recommendations, such as suggesting a movie on Netflix or a product on Amazon that a user might like, has been found to be linked to increased sales, an increase in consumer surplus and competitive advantages \cite{hinz2010impact}.
-Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. 
+Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. Notably, we exclusively work with meta data, that is, we do not have access to any information about the users and movies besides their ratings. 
 
     
 Traditionally, k-nearest neighbour approaches have been applied to this problem. In these algorithms, the ratings of the most similar users or items are exploited to infer the rating for a given user and item \cite{sarwar2001item}.
@@ -53,7 +51,7 @@ Recently, the most popular approach has been to represent users and items  as ve
 \cite{he2017neural}.
 
 
-((Summarize work on ensemble method we use.))
+% TODO(benjamin-hahn): Give one or two sentence pitch on ensemlbe methods.
 
 
 
@@ -61,9 +59,9 @@ We draw on and improve previous work by proposing an approach which applies a st
 
 Our main contributions are thus the following: 
 \begin{enumerate}
-    \item ((Kevin's bit on MF techniques.))
+    \item % TODO(kkleindev): Summarise our contribution w.r.t. MF techniques.
     \item Following the idea of pretraining neural networks, we use existing embeddings as input for our neural network. We obtain embeddings using a number of different methods which are then used as input of a feed-forward neural network to model nonlinear interactions between the users and the items. 
-    \item ((Ben's bit on ensemble methods))
+    \item %TODO(benjamin-hahn): Summarise our contribution w.r.t ensemble methods. 
 \end{enumerate}
 
 
@@ -78,11 +76,11 @@ The goal of this task is to minimize the Root Mean Squared Error (RMSE) given by
 RMSE = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(u, i) \in \mathcal{T}} (r_{u,i} -\widehat{r}_{u,i})^2}    
 \end{equation}
 
-%TODO(?): Talk about why or how we care about RMSE.
-
 %TODO(?): Talk about train-validation split.
 
-where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{u,i}$ the corresponding prediction. 
+where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{u,i}$ the corresponding prediction.
+%TODO(?): Decide whether we actually want to give intuition for RMSE. In an acutal paper we would out ourselves as N00Bs by doing so ;)
+Intuitively, this is a measure of how much our predictions deviate from the true ratings on average, while penalising large errors more strongly than small errors. 
 
 %TODO(benjamin-hahn): Extend this with some of the data analysis results that you got.
 
@@ -127,10 +125,6 @@ Loss function can be tackled by:
 
 \subsection{Preprocessing}
 
-* Why we need to do this in the first place
-* What approaches we follow:
-    by avg, by bias, "novel""Wir waren in den ersten Spielen konteranfällig. Das hat nicht immer nur mit der Abwehr selber zu tun. Wenn vier Leute auf die Abwehr zulaufen, dann hat jede Abwehr der Welt Probleme. Gegen Schweden haben wir das viel besser gemacht als gegen Mexiko. Das ist der Maßstab und daran werden wir uns messen." 
-    
 Many matrix factorization techniques, such as SVD, require full matrices, that is ratings for all user and movie pairs, as initial input. As we only observe a small subset of ratings, we face the problem of inferring the unobserved ratings to generate a valid input for our main methods. To this end, we use a number of different approaches.
 
 \subsubsection{Naive Averages}
@@ -142,7 +136,7 @@ A more sophisticated idea is to compute how much the average rating for a given 
 Given these biases, we then compute the initialization for an unobserved rating $r_{ij}$ as $r_{ij} = \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j} + user\_bias_i + movie\_bias_j$.
 
 \subsubsection{"Novel init"}
-((Decide whether and in what form we want to include this based on results we get.))
+% TODO(?): Decide whether and in what form we want to include this based on results we get.
 
 \subsection{Core}
 \subsubsection{Matrix Factorization}
@@ -177,7 +171,8 @@ RMSE & 1.117           & 0.993   & 0.997           & 1.08   & 0.995   \\ \hline
 \end{table}
 
 Using grid search in the, we find hyperparameters yielding the best results on the validation set (see table \ref{table:neural_net_models}). 
-With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.((Into how much detail do we need to go here?))
+With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.
+% TODO(heylook): Into how much detail do we need to go here?
 
 
 
