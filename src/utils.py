@@ -138,23 +138,26 @@ def impute_by_variance(data):
     global_average = np.sum(data) / np.count_nonzero(data)
     global_variance = np.var(data[data != 0])
 
-    m = np.zeros((data.shape[1],))
+    adjusted_movie_means = np.zeros((data.shape[1],))
     for i in range(data.shape[1]):
         movie_ratings = data[:, i]
         movie_ratings = movie_ratings[movie_ratings != 0]
         movie_variance = np.var(movie_ratings)
-        k = movie_variance / global_variance
-        m[i] = (global_average * k + np.sum(movie_ratings)) /\
-               (k + np.count_nonzero(movie_ratings))
+        relative_variance = movie_variance / global_variance
+        adjusted_movie_means[i] = (
+            global_average * relative_variance + np.sum(movie_ratings)) / (
+                relative_variance + np.count_nonzero(movie_ratings))
 
-    u = np.zeros((data.shape[0],))
+    adjusted_user_deviation = np.zeros((data.shape[0],))
     for i in range(data.shape[0]):
         user_ratings = data[i]
-        diff = m - user_ratings
-        r = diff[user_ratings != 0]
-        user_variance = np.var(r)
-        k = user_variance / global_variance
-        u[i] = (global_average * k + sum(r)) / (k + np.count_nonzero(r))
+        user_deviations = adjusted_movie_means - user_ratings
+        user_deviations = user_deviations[user_ratings != 0]
+        user_deviation_variance = np.var(user_deviations)
+        relative_variance = user_deviation_variance / global_variance
+        adjusted_user_deviation[i] = (
+            global_average * relative_variance + sum(user_deviations)) / (
+                relative_variance + np.count_nonzero(user_deviations))
 
     user_counts = np.count_nonzero(data, axis=1)
     movie_counts = np.count_nonzero(data, axis=0)
@@ -165,8 +168,10 @@ def impute_by_variance(data):
         movie_count_matrix) + USER_COUNT_WEIGHT * copy.copy(user_count_matrix)
     d_matrix = np.divide(movie_count_matrix, combined_matrix)
 
-    m_matrix = np.tile(m, (len(u), 1))
-    u_matrix = np.tile(u, (len(m), 1)).T
+    m_matrix = np.tile(
+        adjusted_movie_means, (len(adjusted_user_deviation), 1))
+    u_matrix = np.tile(
+        adjusted_user_deviation, (len(adjusted_movie_means), 1)).T
 
     data = np.multiply(m_matrix, d_matrix) + \
         np.multiply(u_matrix, np.ones(d_matrix.shape) - d_matrix)
