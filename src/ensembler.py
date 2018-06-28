@@ -8,8 +8,10 @@ from sklearn.kernel_ridge import KernelRidge
 import xgboost as xgb
 
 import utils
+import utils_svd
 import model_reg_sgd
 import model_iterated_svd
+import model_sf
 
 # This file is meant as a template. Feel free to change, replace or copy.
 # TODO(b-hahn): Define and use meaningful naming scheme.
@@ -183,8 +185,11 @@ def bagging(n):
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
 
-    predictor = 'svd'
-    k = 3  # TODO: remove for real runs
+    predictor = 'sf'
+    k = rank = 10
+    reg_emb = 0.02
+    reg_bias = 0.005
+
     predictions = []
     sampled_data = np.zeros_like(masked_data)
     sampled_users = np.zeros(masked_data.shape[0])
@@ -197,11 +202,17 @@ def bagging(n):
             sampled_users[r] = random_row
             sampled_data[r, :] = masked_data[random_row, :]
         if predictor == 'reg_sgd':
-            sampled_prediction, _ = model_reg_sgd.predict_by_sgd(sampled_data, k, regularization)
+            sampled_prediction, _, _ = model_reg_sgd.predict_by_sgd(sampled_data, k, regularization)
         elif predictor == 'svd':
             imputed_data = np.copy(sampled_data)
             utils.impute_by_avg(imputed_data, True)
             sampled_prediction, _, _ = model_svd.predict_by_svd(sampled_data, imputed_data, k)
+        elif predictor == 'sf':
+            imputed_data = np.copy(sampled_data)
+            utils.impute_by_variance(imputed_data)
+            u_embeddings, z_embeddings = utils_svd.get_embeddings(imputed_data, rank)
+            sampled_prediction, _, _, _, _ = model_sf.predict_by_sf(sampled_data, rank, reg_emb, reg_bias, u_embeddings,
+                                                                    z_embeddings)
         # sort predictions by user and group duplicates
         # then calculate mean predictions for duplicates.
         prediction = np.zeros_like(masked_data) * np.nan
@@ -232,11 +243,11 @@ def bagging(n):
     print("Predictions saved in {}".format(SUBMISSION_FILE))
     utils.reconstruction_to_predictions(
         mean_predictions,
-        utils.ROOT_DIR + 'data/meta_training_bagging_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        utils.ROOT_DIR + 'data/meta_training_bagging_' + predictor + '_' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
         indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/train_valid_80_10_10/validationIndices_first.csv"))
     utils.reconstruction_to_predictions(
         mean_predictions,
-        utils.ROOT_DIR + 'data/meta_validation_bagging_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+        utils.ROOT_DIR + 'data/meta_validation_bagging_' + predictor + '_' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
         '.csv',
         indices_to_predict=utils.get_validation_indices(
             utils.ROOT_DIR + "data/train_valid_80_10_10/validationIndices_second.csv"))
@@ -276,10 +287,10 @@ def main():
     # utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
     # print("Predictions saved in {}".format(SUBMISSION_FILE))
 
-    # bagging(3)
+    bagging(3)
 
-    stacking(load_predictions_from_files('meta_training'),
-             load_predictions_from_files('meta_validation'))
+    # stacking(load_predictions_from_files('meta_training'),
+    #          load_predictions_from_files('meta_validation'))
 
 
 if __name__ == '__main__':
