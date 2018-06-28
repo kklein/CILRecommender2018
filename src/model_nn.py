@@ -175,7 +175,6 @@ def write_nn_predictions(data_matrix, y_predicted, indices_to_predict=utils.get_
     :param y_predicted:
     :return:
     """
-
     for a, index in enumerate(indices_to_predict):
         data_matrix[index] = y_predicted[a]
 
@@ -278,8 +277,8 @@ def main():
         architecture = (50,)
         nn_configuration = ("nmf", 100, architecture, n_training_samples, alpha)
         classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_2, _ = predict_by_nn(data_matrix, imputed_data,
-        prediction_2, _ = predict_by_nn(data_matrix,
+        prediction_2, _ = predict_by_nn(data_matrix, nn_configuration, classifier)
+        prediction, _ = np.mean([prediction_1, prediction_2], axis=0)
         print(prediction_2[:100])
         write_nn_predictions(data_matrix, prediction)
 
@@ -288,7 +287,7 @@ def main():
         nn_configuration = (embedding_type, embedding_dimensions,
                             architecture, n_training_samples,
                             alpha)
-        classifier=MLPRegressor(architecture, alpha=alpha, warm_start=False)
+        classifier = MLPRegressor(architecture, alpha=alpha, warm_start=False)
         prediction, validation_predictions=predict_by_nn(data_matrix,
                                                          nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
