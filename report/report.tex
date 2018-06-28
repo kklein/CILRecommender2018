@@ -116,14 +116,14 @@ Loss function can be tackled by:
 \item SGD
 \item Coordinate descent
 \end{itemize}
-\subsubsection{Combinations of embeddings via NNs}
+\subsubsection{Neural Networks}
 We leverage neural network models in two different ways. Firstly, we let the neural network learn lower-dimensional representations of users and items which are then used to make predictions. 
 Secondly, we apply neural networks to existing embedding vectors which allows for non-linear interactions between users and items to predict ratings. 
 
-For the first approach we follow the approach proposed in Neural Collaborative Filtering \cite{he2017neural}, where one-hot encodings for users and items are fed into the network as input into a feedforward neural network. The vector defined by the activation of the first hidden layer can then be seen as the embedding learned by the neural network.  
+For the first approach we follow the algorithm proposed in Neural Collaborative Filtering \cite{he2017neural}, where one-hot encodings for users and items are fed into a feedforward network as input. The vector defined by the activation of the first hidden layer can then be seen as the embedding learned by the neural network.  
 
-The second strategy exploits precomputed embeddings while being able to model complex, nonlinear interactions  between the users and the items. 
-We thus train neural network models to predict ratings given user and item embeddings obtained through a number of different dimensionality reduction techniques: Locally Linear Embeddings \cite{roweis2000nonlinear}, Non-Negative Matrix Factorisation \cite{cichocki2009fast}, Principal Component Analyis, SVD and iterated SVD, regularized SVD and the coordinate ascent method described above.
+The second strategy exploits precomputed embeddings while also being able to model complex, nonlinear interactions  between the users and the items. 
+To this end, we train neural network models to predict ratings given user and item embeddings which are obtained through a number of different dimensionality reduction techniques: Locally Linear Embeddings \cite{roweis2000nonlinear}, Non-Negative Matrix Factorisation \cite{cichocki2009fast}, Principal Component Analysis, SVD and iterated SVD, regularized SVD and the coordinate descent method as described above.
 
 In particular the neural network model used is the following:
 \begin{equation}
@@ -157,9 +157,9 @@ SF              & 1.011 \\ \hline
 \end{tabular}
 \end{table}
 
-Using grid search in the, we find hyperparameters yielding the best results on the validation set (see table \ref{table:neural_net_models}). 
-With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.
-% TODO(heylook): Into how much detail do we need to go here?
+Using grid search,  we find the hyperparameters yielding the best results on the validation set (see table \ref{table:neural_net_models}). 
+
+% TODO(?): Into how much detail do we need to go here? If you want to provide more detail on the architecture, refer to analysis/nn_scores_24.csv where these numbers come from. 
 
 \subsection{Ensembling methods}
 
