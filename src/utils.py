@@ -7,9 +7,11 @@ from sklearn.preprocessing import normalize
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
 TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/trainingIndices.csv')
+            'data/train_valid_80_10_10/trainingIndices.csv')
 VALIDATION_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/validationIndices_first.csv')
+            'data/train_valid_80_10_10/validationIndices_first.csv')
+VALIDATION_MASK_FILE_NAME = os.path.join(ROOT_DIR, \
+            'data/train_valid_80_10_10/validationIndices_mask.csv')
 
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
             'data/sampleSubmission.csv')
@@ -53,7 +55,7 @@ def ratings_to_matrix(ratings):
 
 def mask_validation(data):
     masked_data = np.copy(data)
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    validation_indices = get_indeces_from_file(VALIDATION_MASK_FILE_NAME)
     for row_index, col_index in validation_indices:
         masked_data[row_index][col_index] = 0
     return masked_data
