@@ -22,6 +22,7 @@ Attributes:
 import copy
 import os
 import sys
+from datetime import datetime
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.decomposition import NMF
@@ -292,9 +293,11 @@ def main():
                                                          nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
         write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_first.csv"), output_file=utils.ROOT_DIR + 'data/meta_training_nn_stacking.csv')
+            utils.ROOT_DIR + "data/validationIndices_first.csv"), output_file=utils.ROOT_DIR + 'data/meta_training_nn_stacking' +
+            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
         write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_second.csv"), output_file=utils.ROOT_DIR + 'data/meta_validation_nn_stacking.csv')
+            utils.ROOT_DIR + "data/validationIndices_second.csv"), output_file=utils.ROOT_DIR + 'data/meta_validation_nn_stacking'  +
+            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 
 
 if __name__ == '__main__':
