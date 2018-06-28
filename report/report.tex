@@ -1,12 +1,19 @@
 \documentclass[10pt,conference,compsocconf]{IEEEtran}
 
 %\usepackage{times}
-%\usepackage{balance}
+%\usepackage{balance}	
 \usepackage{url}
 \usepackage{graphicx}	% For figure environment
 \usepackage{algorithmic}
 \usepackage{amsmath}
 \usepackage{amssymb}
+
+
+% Conventions
+% - use present tense
+% - user $i$, movie $j$
+% - predictions: $\hat{R}$, $\hat{r_{ij}}$
+% TODO(?): subtitle capitalization
 
 
 \begin{document}
@@ -35,7 +42,7 @@
 \section{Introduction}
 
 Many online businesses face the difficult yet crucial challenge of finding the most relevant products out of a enormous set of options for each of their users. Providing better recommendations, such as suggesting a movie on Netflix or a product on Amazon that a user might like, has been found to be linked to increased sales, an increase in consumer surplus and competitive advantages \cite{hinz2010impact}.
-Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. 
+Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modelled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. Notably, we exclusively work with meta data, that is, we do not have access to any information about the users and movies besides their ratings. 
 
     
 Traditionally, k-nearest neighbour approaches have been applied to this problem. In these algorithms, the ratings of the most similar users or items are exploited to infer the rating for a given user and item \cite{sarwar2001item}.
@@ -44,7 +51,7 @@ Recently, the most popular approach has been to represent users and items  as ve
 \cite{he2017neural}.
 
 
-((Summarize work on ensemble method we use.))
+% TODO(benjamin-hahn): Give one or two sentence pitch on ensemlbe methods.
 
 
 
@@ -52,57 +59,71 @@ We draw on and improve previous work by proposing an approach which applies a st
 
 Our main contributions are thus the following: 
 \begin{enumerate}
-    \item ((Kevin's bit on MF techniques.))
+    \item % TODO(kkleindev): Summarise our contribution w.r.t. MF techniques.
     \item Following the idea of pretraining neural networks, we use existing embeddings as input for our neural network. We obtain embeddings using a number of different methods which are then used as input of a feed-forward neural network to model nonlinear interactions between the users and the items. 
-    \item ((Ben's bit on ensemble methods))
+    \item %TODO(benjamin-hahn): Summarise our contribution w.r.t ensemble methods. 
 \end{enumerate}
 
 
+\section{Data and metric}
+We use a dataset \footnote{https://www.kaggle.com/c/cil-collab-filtering-2018} of movie ratings by anonymous users.
+In other words, we are given a set of observed ratings $\mathcal{R}$. For $(u, i, r_{ui}) \in \mathcal{R}$, $u \in [1\dots10000]$ is a user id, $i \in [1\dots1000]$  is an item id and $r_{ui} \in [1\dots5]$ the rating of the user for this item. $\mathcal{R}$ contains 11.8\% of all possible ratings. Note that we have no knowledge about either movies or users other than ids.
 
-\section{Models and Methods}
-\label{sec:methods}
-
-\subsection{Task}
-
-The specific task we address is the following.
-We are given a set of observed ratings $\mathcal{R}$. For $(u, i, r_{ui}) \in \mathcal{R}$, $u \in [1\dots10000]$ is a user id, $i \in [1\dots1000]$  is an item id and $r_{ui} \in [1\dots5]$ the rating of the user for this item. $\mathcal{R}$ contains 11.8\% of all possible ratings. 
-
-Furthermore, we are given a test set $\mathcal{T}$, where $(u,i) \in \mathcal{T}$ are unobserved tuples of user and item ids for which we want to infer the ratings
+Furthermore, we are given a test set $\mathcal{T}$, where $(u,i) \in \mathcal{T}$ are unobserved tuples of user and item ids for which we want to infer ratings.
 
 The goal of this task is to minimize the Root Mean Squared Error (RMSE) given by:
 \begin{equation}
 RMSE = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(u, i) \in \mathcal{T}} (r_{u,i} -\widehat{r}_{u,i})^2}    
 \end{equation}
 
-where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{u,i}$ the corresponding prediction. 
+%TODO(?): Talk about train-validation split.
 
-((@Ben: Please extend this with some of the data analysis results that you got.))
+where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{u,i}$ the corresponding prediction.
+%TODO(?): Decide whether we actually want to give intuition for RMSE. In an acutal paper we would out ourselves as N00Bs by doing so ;)
+Intuitively, this is a measure of how much our predictions deviate from the true ratings on average, while penalising large errors more strongly than small errors. 
 
-\subsection{Preprocessing}
+%TODO(benjamin-hahn): Extend this with some of the data analysis results that you got.
 
-* Why we need to do this in the first place
-* What approaches we follow:
-    by avg, by bias, "novel"
-    
-Many matrix factorization techniques, such as SVD, require full matrices, that is ratings for all user and movie pairs, as initial input. As we only observe a small subset of ratings, we face the problem of inferring the unobserved ratings to generate a valid input for our main methods. To this end, we use a number of different approaches.
+\section{Models and Methods}
+\label{sec:methods}
+\subsection{Individual models}
+Our models revolve around lower-dimensional representations of the initially sparse and high-dimensional data. Given a lower-dimensional representation $u_i$ of a user $i$ and $z_j$ movie $j$, also called embeddings, we can combine those to predict $r_{ij}$. There are different approaches towards combining the latter. The simplest is a linear combination of both embeddings, the dot-product. More complex, non-linear combinations can be modeled by the activation functions used in Neural Networks (NNs). Our methods provide ways of generating such embeddings from the initially given ratings.
 
-\subsubsection{Naive Averages}
-One straightforward way of inferring an unobserved rating $r_{ij}$ is to set unobserved ratings to the mean of the observations in row $i$ or column $j$ respectively. This captures the intuition that a user's rating for a film is going to be close to the user's other ratings or the films other ratings respectively.
+Combinations of embeddings via the dot-product
 
-\subsubsection{Biases}
-A more sophisticated idea is to compute how much the average rating for a given user or a given film deviates from the total average of all observed ratings: $user\_bias_i = \frac{1}{N_i} \sum_{j : r_{ij} \in R} r_{ij} - \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j}$ , where $N_i$ is the number of observations for user $i$, $N$ the total number of observations and $R$ the set of observed ratings. Analogously, $movie\_bias_j$ can be computed for all movies. 
+For those methods we assume that both embeddings stem from a shared embedding-space. \\
+Observe that approximating $\hat{r_{ij}}$ by $u_i^Tz_j$ can be expressed in matrix form: $\hat{R} = UZ^T$ where row $i$ of $U$ represents the embedding of user $i$ and the row $j$ of $Z$ represents the embedding of movie $j$. Hence the typical reference to the term \emph{matrix factorization}.\\
 
-Given these biases, we then compute the initialization for an unobserved rating $r_{ij}$ as $r_{ij} = \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j} + user\_bias_i + movie\_bias_j$.
+\subsubsection{Singular Value Decomposition (SVD)}
 
-\subsubsection{"Novel init"}
-((Decide whether and in what form we want to include this based on results we get.))
+%TODO(kkleindev): Define the meaning of the original ratings matrix and make the transition to embeddings cleaner/more explicit.
+We know that SVD can provide a matrix factorization for general matrices $M = U \Sigma V^*$. As $\Sigma$ is diagonal with non-negative entries, with can mutliply both $U$ and $V$ with the squareroot of $\Sigma$ to obtain implicit embeddings of users and movies. In order to obtain a \emph{lower-dimensional} embedding, we simply drop all but the first $k$ dimensions, which minimizes the approximation error in Frobenius norm\footnote{Eckart–Young–Mirsky Theorem}. With those lower-dimensional embeddings we can generate sensible predictions $\hat{R}$. The careful reader might have noticed that the origin of our problem is that we don't dispose of such a matrix $M$. The ratings given to us only constitute a \emph{sparse} matrix, constituted of many holes, as most users have rated but a small proportion of all movies. Hence we allow the brute compromise of filling up the holes of ratings matrix by heuristics, which we refer to as \emph{imputation}. 
+%TODO(kkleindev): Talk about different imputation methods.
 
-\subsection{Core}
-\subsubsection{Matrix Factorization}
-\subsubsection{Neural Network}
-In addition to the models based on matrix factorization techniques, our system employs a number of predictors based on neural networks. Firstly, we follow the approach proposed in Neural Collaborative Filtering \cite{he2017neural}, where embedding vectors for users and items are learned from random initialisations which are then fed into a feedforward neural network. The model parameters are then trained using standard backpropagation methods to minimise the squared loss on the observed ratings. 
-Secondly, we propose the use of existing embedding vectors obtained through other methods as input to a neural network regressor. Rather than having to learn the embedding vectors, this approach exploits precomputed embeddings while being able to model complex, nonlinear interactions  between the users and the items. 
-a number of neural network models are trained to predict ratings given user and item embeddings obtained through a number of different dimensionality reduction techniques: Locally Linear Embeddings \cite{roweis2000nonlinear}, Non-Negative Matrix Factorisation \cite{cichocki2009fast}, standard SVD and iterated SVD as presented above.
+\subsubsection{Iterated SVD}
+Reduce importatnce of imputation.
+
+\subsubsection{Regularized 'SVD'}
+2 pain points of Iterated SVD: \\
+- Some features explode, others implode. \\
+- Imputation dilutes our knowledge and gives equal weight/importance to imputed values than to actual ratings \\
+2 solutions by reg svd:\\
+- add regularization on embeddings\\
+- don't impute and only sum over observed ratings\\
+Definition of Loss function\\
+Loss function can be tackled by:
+\begin{itemize}
+\item SGD
+\item Coordinate descent
+\end{itemize}
+\subsubsection{Combinations of embeddings via NNs}
+We leverage neural network models in two different ways. Firstly, we let the neural network learn lower-dimensional representations of users and items which are then used to make predictions. 
+Secondly, we apply neural networks to existing embedding vectors which allows for non-linear interactions between users and items to predict ratings. 
+
+For the first approach we follow the approach proposed in Neural Collaborative Filtering \cite{he2017neural}, where one-hot encodings for users and items are fed into the network as input into a feedforward neural network. The vector defined by the activation of the first hidden layer can then be seen as the embedding learned by the neural network.  
+
+The second strategy exploits precomputed embeddings while being able to model complex, nonlinear interactions  between the users and the items. 
+We thus train neural network models to predict ratings given user and item embeddings obtained through a number of different dimensionality reduction techniques: Locally Linear Embeddings \cite{roweis2000nonlinear}, Non-Negative Matrix Factorisation \cite{cichocki2009fast}, Principal Component Analyis, SVD and iterated SVD, regularized SVD and the coordinate ascent method described above.
 
 In particular the neural network model used is the following:
 \begin{equation}
@@ -116,26 +137,51 @@ In particular the neural network model used is the following:
 \end{equation}
 
 where $a_i,\bf{W_i}, \bf{b_i}$, denote the i-th layer's activation function, weights and bias respectively. With $\bf{e_i}$ and $\bf{e_u}$ we denote the embedding vectors for the users and items respectively. We use the rectifier (ReLU) activation function, which has been found to frequently yield superior results as compared to the traditionally used sigmoid and tanh functions \cite{glorot2011deep}.
-
-
+Model parameters are then trained using the Adam optimiser \cite{kingma2014adam} to minimise the squared loss.
+ 
 \begin{table}[ht]
 \centering
-\caption{Validation Results of Neural Network Models}
+\caption{Validation Scores of Neural Network Models}
 \label{table:neural_net_models}
-\begin{tabular}{|l|l|l|l|l|l|}
+\begin{tabular}{|l|l|}
 \hline
-     & Random Init & SVD & Iterated SVD & LLE & NMF \\ \hline
-RMSE & 1.117           & 0.993   & 0.997           & 1.08   & 0.995   \\ \hline
+                & RMSE  \\ \hline
+Learned Embeddings     & 1.116 \\ \hline
+SVD             & 0.993 \\ \hline
+Iterated SVD    & 0.999 \\ \hline
+LLE             & 1.07  \\ \hline
+NMF             & 0.994 \\ \hline
+PCA             & 0.993 \\ \hline
+Regularized SGD & 1.043 \\ \hline
+SF              & 1.011 \\ \hline
 \end{tabular}
 \end{table}
 
 Using grid search in the, we find hyperparameters yielding the best results on the validation set (see table \ref{table:neural_net_models}). 
-With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.((Into how much detail do we need to go here?))
+With regards to the dimensionality of the embedding space, we find that $\mathbf{e_i}, \mathbf{e_u} \in  \mathbb{R}^{20}$ leads to the best results. We find that two hidden layers with 10 and 5 nodes respectively yield the best RMSE. For the randomly initialised embeddings, an additional hidden layer is added and the layer widths are increased.
+% TODO(heylook): Into how much detail do we need to go here?
+
+\subsection{Ensembling methods}
 
 
+\section{Misc}
+
+\subsection{Preprocessing}
+
+Many matrix factorization techniques, such as SVD, require full matrices, that is ratings for all user and movie pairs, as initial input. As we only observe a small subset of ratings, we face the problem of inferring the unobserved ratings to generate a valid input for our main methods. To this end, we use a number of different approaches.
+
+\subsubsection{Naive Averages}
+One straightforward way of inferring an unobserved rating $r_{ij}$ is to set unobserved ratings to the mean of the observations in row $i$ or column $j$ respectively. This captures the intuition that a user's rating for a film is going to be close to the user's other ratings or the films other ratings respectively.
+
+\subsubsection{Biases}
+A more sophisticated idea is to compute how much the average rating for a given user or a given film deviates from the total average of all observed ratings: $user\_bias_i = \frac{1}{N_i} \sum_{j : r_{ij} \in R} r_{ij} - \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j}$ , where $N_i$ is the number of observations for user $i$, $N$ the total number of observations and $R$ the set of observed ratings. Analogously, $movie\_bias_j$ can be computed for all movies. 
+
+Given these biases, we then compute the initialization for an unobserved rating $r_{ij}$ as $r_{ij} = \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j} + user\_bias_i + movie\_bias_j$.
+
+\subsubsection{"Novel init"}
+% TODO(?): Decide whether and in what form we want to include this based on results we get.
 
 
-\subsubsection{Ensemble Methods}
 
 \subsection{Postprocessing}
 As a final step, we smooth the predictions based on the user's  k-Nearest-Neighbors in the embedding space obtained through SVD. Following Bell et al. \cite{bell2007improved}
