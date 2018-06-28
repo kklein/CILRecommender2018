@@ -138,17 +138,22 @@ In particular the neural network model used is the following:
 
 where $a_i,\bf{W_i}, \bf{b_i}$, denote the i-th layer's activation function, weights and bias respectively. With $\bf{e_i}$ and $\bf{e_u}$ we denote the embedding vectors for the users and items respectively. We use the rectifier (ReLU) activation function, which has been found to frequently yield superior results as compared to the traditionally used sigmoid and tanh functions \cite{glorot2011deep}.
 Model parameters are then trained using the Adam optimiser \cite{kingma2014adam} to minimise the squared loss.
-
-% TODO(heylook): Update this table. 
-
+ 
 \begin{table}[ht]
 \centering
-\caption{Validation Results of Neural Network Models}
+\caption{Validation Scores of Neural Network Models}
 \label{table:neural_net_models}
-\begin{tabular}{|l|l|l|l|l|l|}
+\begin{tabular}{|l|l|}
 \hline
-     & Random Init & SVD & Iterated SVD & LLE & NMF \\ \hline
-RMSE & 1.117           & 0.993   & 0.997           & 1.08   & 0.995   \\ \hline
+                & RMSE  \\ \hline
+Learned Embeddings     & 1.116 \\ \hline
+SVD             & 0.993 \\ \hline
+Iterated SVD    & 0.999 \\ \hline
+LLE             & 1.07  \\ \hline
+NMF             & 0.994 \\ \hline
+PCA             & 0.993 \\ \hline
+Regularized SGD & 1.043 \\ \hline
+SF              & 1.011 \\ \hline
 \end{tabular}
 \end{table}
 
