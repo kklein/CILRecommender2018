@@ -7,7 +7,8 @@ import model_sf as sf
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/chain.csv')
+        'data/chain_'  +
+        datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/chain_scores.csv')
 
 N_META_EPOCHS = 6
