@@ -7,11 +7,11 @@ from sklearn.preprocessing import normalize
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
 TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/train_valid_80_10_10/trainingIndices.csv')
+            'data/trainingIndices.csv')
 VALIDATION_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/train_valid_80_10_10/validationIndices_first.csv')
+            'data/validationIndices_first.csv')
 VALIDATION_MASK_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/train_valid_80_10_10/validationIndices_mask.csv')
+            'data/validationIndices_mask.csv')
 
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
             'data/sampleSubmission.csv')

@@ -5,6 +5,7 @@ import numpy as np
 from sklearn import ensemble
 from sklearn.neural_network import MLPRegressor
 from sklearn.kernel_ridge import KernelRidge
+from sklearn.linear_model import Ridge
 import xgboost as xgb
 
 import utils
@@ -108,10 +109,12 @@ def stacking(meta_training, meta_validation):
     ground_truth_ratings = utils.ratings_to_matrix(ground_truth_ratings)
     # TODO: rename function to something more appropriate?
 
-    train_indices = utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv")
+    train_indices = utils.get_validation_indices(
+        utils.ROOT_DIR + "data/validationIndices_first.csv")
     train_ratings_predictions = np.squeeze([[rating[i, j] for rating in meta_training] for i, j in train_indices])
     train_ratings_target = [ground_truth_ratings[i, j] for i, j in train_indices]
-    validation_indices = utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv")
+    validation_indices = utils.get_validation_indices(
+        utils.ROOT_DIR + "data/validationIndices_second.csv")
     validation_ratings_predictions = np.squeeze(
         [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
     # validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
@@ -141,18 +144,36 @@ def stacking(meta_training, meta_validation):
         regressor = MLPRegressor(hidden_layer_sizes=(50, 100))
         regressor.fit(X=train_ratings_predictions, y=train_ratings_target)
         lvl2_validation = regressor.predict(X=validation_ratings_predictions)
+        lvl2_test = regressor.predict(X=test_ratings_predictions)
 
     elif STACKING_METHOD == "xgb":
         # using xgboost
         regressor = xgb.XGBRegressor(max_depth=4, learning_rate=0.8, n_estimators=100, eta=0.99)
         regressor.fit(train_ratings_predictions, train_ratings_target)
         lvl2_validation = regressor.predict(validation_ratings_predictions)
+        lvl2_test = regressor.predict(test_ratings_predictions)
 
-    elif STACKING_METHOD == "kr":
+    elif STACKING_METHOD == "krr":
         # kernel ridge regression
-        regressor = KernelRidge()
+        regressor = KernelRidge(solver='lsqr')
         regressor.fit(train_ratings_predictions, train_ratings_target)
         lvl2_validation = regressor.predict(validation_ratings_predictions)
+        lvl2_test = regressor.predict(test_ratings_predictions)
+        print("Implement lvl2_test!")
+        return
+
+    elif STACKING_METHOD == "rr":
+        # ridge regression
+        regressor = Ridge(solver='auto', normalize='False')
+        regressor.fit(train_ratings_predictions, train_ratings_target)
+        lvl2_validation = regressor.predict(validation_ratings_predictions)
+        lvl2_test = regressor.predict(test_ratings_predictions)
+
+    elif STACKING_METHOD == "none":
+        # no stacking, just output specified predictions
+        lvl2_validation = validation_ratings_predictions[:,0]
+        print(lvl2_validation)
+        lvl2_test = test_ratings_predictions[:,0]
 
     lvl2_validation = utils.ratings_to_matrix([(validation_indices[i][0], validation_indices[i][1],
                                                 lvl2_validation[i]) for i in range(len(validation_indices))])
@@ -206,7 +227,7 @@ def bagging(n):
         elif predictor == 'svd':
             imputed_data = np.copy(sampled_data)
             utils.impute_by_avg(imputed_data, True)
-            sampled_prediction, _, _ = model_svd.predict_by_svd(sampled_data, imputed_data, k)
+            sampled_prediction, _, _ = model_iterated_svd.predict_by_svd(sampled_data, imputed_data, k)
         elif predictor == 'sf':
             imputed_data = np.copy(sampled_data)
             utils.impute_by_variance(imputed_data)
