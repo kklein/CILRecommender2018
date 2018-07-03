@@ -173,6 +173,7 @@ def write_nn_predictions(data_matrix, y_predicted, indices_to_predict=utils.get_
     """ Given vector of predictions, insert predictions into data matrix.
     :param data_matrix:
     :param y_predicted:
+    :param indices_to_predict:
     :return:
     """
     for a, index in enumerate(indices_to_predict):
@@ -240,7 +241,7 @@ def predict_by_nn(data_matrix, nn_configuration, classifier):
 
     y_predicted = classifier.predict(x_test)
     print("ypredicted", len(y_predicted))
-    return y_predicted, y_validate_hat
+    return y_predicted
 
 
 def main():
@@ -291,12 +292,13 @@ def main():
         prediction, validation_predictions=predict_by_nn(data_matrix,
                                                          nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
-        write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_first.csv"), output_file=utils.ROOT_DIR + 'data/meta_training_nn_stacking' +
-            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-        write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_second.csv"), output_file=utils.ROOT_DIR + 'data/meta_validation_nn_stacking'  +
-            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
+        if utils.SAVE_META_PREDICTIONS:
+            write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
+                utils.ROOT_DIR + "data/validationIndices_first.csv"), output_file=utils.ROOT_DIR + 'data/meta_training_nn_stacking' +
+                datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
+            write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
+                utils.ROOT_DIR + "data/validationIndices_second.csv"), output_file=utils.ROOT_DIR + 'data/meta_validation_nn_stacking'  +
+                datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 
 
 if __name__ == '__main__':

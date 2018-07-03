@@ -52,16 +52,17 @@ def main():
     print("rmse after smoothing: %f" % rmse)
     write_chain_score(approximation_rank, n_meta_epochs, rmse)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_training_chain_svd_stacking' +
-        datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_validation_chain_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
-        '.csv',
-        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
+    if utils.SAVE_META_PREDICTIONS:
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_training_chain_svd_stacking' +
+            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_validation_chain_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+            '.csv',
+            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
 
 if __name__ == '__main__':
     main()

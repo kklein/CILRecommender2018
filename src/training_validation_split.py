@@ -1,12 +1,11 @@
 import numpy as np
 import utils
 
-TRAIN_PROPORTION = 0.8
-THREE_WAY_SPLIT = True
+TRAIN_PROPORTION = 0.9
+THREE_WAY_SPLIT = False
 
 
 def write_indices_to_file(indices, file_name):
-    #file_name = '../data/' + file_name + '.csv'
     with open(file_name, 'w') as file:
         file.write('Row,Column\n')
         for i, j in indices:

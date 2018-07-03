@@ -79,7 +79,7 @@ def main():
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
     svd_initiliazied = random.choice([True, False])
-    # svd_initiliazied = True
+
     if svd_initiliazied:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
@@ -103,17 +103,18 @@ def main():
     utils_sgd.write_sgd_score(
         rmse, rank, regularization, regularization, 'S', initialization_string, SCORE_FILE)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_training_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-        indices_to_predict=utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_first.csv"))
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_validation_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
-        '.csv',
-        indices_to_predict=utils.get_validation_indices(
-            utils.ROOT_DIR + "data/validationIndices_second.csv"))
+    if utils.SAVE_META_PREDICTIONS:
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_training_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+            indices_to_predict=utils.get_validation_indices(
+                utils.ROOT_DIR + "data/validationIndices_first.csv"))
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_validation_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+            '.csv',
+            indices_to_predict=utils.get_validation_indices(
+                utils.ROOT_DIR + "data/validationIndices_second.csv"))
 
 
 if __name__ == '__main__':

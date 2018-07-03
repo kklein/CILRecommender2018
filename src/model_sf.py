@@ -201,23 +201,24 @@ def main():
     rmse = utils.compute_rmse(data, reconstruction)
     print('Validation rmse before smoothing: %f' % rmse)
     utils_sgd.write_sgd_score(
-        rmse, rank, reg_emb, reg_bias, 'S', initialization_string, SCORE_FILE)
+        rmse, rank, reg_emb, reg_bias, '!S', initialization_string, SCORE_FILE)
     reconstruction = utils.knn_smoothing(reconstruction, u_embeddings)
-    rsme = utils.compute_rsme(data, reconstruction)
-    print('Validation RSME after smoothing: %f' % rsme)
-    utils_sgd.write_sgd_score(rsme, k, reg_emb, reg_bias, 'S',
+    rmse = utils.compute_rmse(data, reconstruction)
+    print('Validation RMSE after smoothing: %f' % rmse)
+    utils_sgd.write_sgd_score(rmse, k, reg_emb, reg_bias, 'S',
             initialization_string, SCORE_FILE)
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_training_sf_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
-    utils.reconstruction_to_predictions(
-        reconstruction,
-        utils.ROOT_DIR + 'data/meta_validation_sf_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
-        '.csv',
-        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
-
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    if utils.SAVE_META_PREDICTIONS:
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_training_sf_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_validation_sf_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+            '.csv',
+            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
+
 
 if __name__ == '__main__':
     main()
