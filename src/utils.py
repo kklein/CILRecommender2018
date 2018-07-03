@@ -8,7 +8,9 @@ ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
 TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
             'data/trainingIndices.csv')
-VALIDATION_FILE_NAME = os.path.join(ROOT_DIR, \
+VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,
+            'data/validationIndices.csv')
+VALIDATION_MASK_FILE_NAME = os.path.join(ROOT_DIR,
             'data/validationIndices.csv')
 
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
@@ -18,8 +20,15 @@ USER_COUNT = 10000
 WEIGHT_KNN = 0.001
 N_NEIGHBORS = 3
 USER_COUNT_WEIGHT = 10
+SAVE_META_PREDICTIONS = False
 
-def load_ratings(data_file=DATA_FILE):
+def load_ratings(data_file = DATA_FILE):
+    """Loads the rating data from the specified file.
+    Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
+    Assumes the file has a header (which is ignored), and that the ratings are
+    then specified as 'rXXX_cXXX,X', where the 'X' blanks specify the row, the
+    column, and then the actual (integer) rating.
+    """
     ratings = []
     with open(data_file, 'r') as file:
         # Read header.
@@ -43,13 +52,14 @@ def ratings_to_matrix(ratings):
 
 def mask_validation(data):
     masked_data = np.copy(data)
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+    validation_indices = get_indeces_from_file(VALIDATION_MASK_FILE_NAME)
     for row_index, col_index in validation_indices:
         masked_data[row_index][col_index] = 0
     return masked_data
 
-def get_validation_indices():
-    validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+
+def get_validation_indices(file_name=VALIDATION_FILE_NAME):
+    validation_indices = get_indeces_from_file(file_name)
     return validation_indices
 
 def get_observed_indeces(data):
@@ -91,8 +101,7 @@ def write_ratings(predictions, submission_file):
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
-def reconstruction_to_predictions(reconstruction, submission_file):
-    indices_to_predict = get_indices_to_predict()
+def reconstruction_to_predictions(reconstruction, submission_file, indices_to_predict=get_indices_to_predict()):
     enumerate_predictions = lambda t: (
         t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]])
     predictions = list(map(enumerate_predictions, indices_to_predict))
@@ -185,6 +194,14 @@ def compute_rmse(data, prediction, indices=None):
         squared_error += (data[i][j] - prediction[i][j]) ** 2
     return np.sqrt(squared_error / len(indices))
 
+
+def compute_fold_rmse(data, prediction, validation_indices):
+    squared_error = 0
+    for i, j in validation_indices:
+        squared_error += (data[i][j] - prediction[i][j]) ** 2
+    return np.sqrt(squared_error / len(validation_indices))
+
+
 def knn_smoothing(reconstruction, user_embeddings):
     normalized_user_embeddings = normalize(user_embeddings)
     knn = NearestNeighbors(n_neighbors=N_NEIGHBORS + 1)
@@ -213,3 +230,20 @@ def knn_smoothing(reconstruction, user_embeddings):
 
     smoothed_data = clip(smoothed_data)
     return smoothed_data
+
+
+def k_folds(data, n_folds):
+    """
+    return n_folds splits of the data where the nonzero entries are equally distributed 
+    """
+    # TODO: shuffle indices, make sure we don't lose track
+    nonzero_indices = np.nonzero(data)
+    # print(nonzero_indices[1:2])
+    print("Nonzero shape: ", nonzero_indices[0].shape)
+
+    fold_splits = np.round(np.linspace(0, len(nonzero_indices[0]), n_folds + 1)).astype(int)
+    print("Splitting data into folds at {}".format(fold_splits))
+    folds_indices = [[nonzero_indices[j][fold_splits[i]:fold_splits[i + 1]] for j in range(2)]
+                     for i in range(n_folds)]
+
+    return folds_indices

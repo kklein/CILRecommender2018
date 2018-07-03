@@ -1,12 +1,16 @@
 import os
 import sys
+from datetime import datetime
+
 import numpy as np
+
 import utils_svd as svd
 import model_sf as sf
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/chain.csv')
+        'data/chain_'  +
+        datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/chain_scores.csv')
 
 N_META_EPOCHS = 6
@@ -50,6 +54,17 @@ def main():
     print("rmse after smoothing: %f" % rmse)
     write_chain_score(approximation_rank, n_meta_epochs, rmse)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
+    if utils.SAVE_META_PREDICTIONS:
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_training_chain_svd_stacking' +
+            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
+        utils.reconstruction_to_predictions(
+            reconstruction,
+            utils.ROOT_DIR + 'data/meta_validation_chain_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
+            '.csv',
+            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
 
 if __name__ == '__main__':
     main()

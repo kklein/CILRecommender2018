@@ -22,6 +22,7 @@ Attributes:
 import copy
 import os
 import sys
+from datetime import datetime
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.decomposition import NMF
@@ -168,20 +169,21 @@ def prepare_data_for_nn(user_embeddings, item_embeddings, data_matrix,
     return x_train, y_train, x_validate, y_validate, x_test
 
 
-def write_nn_predictions(data_matrix, y_predicted):
+def write_nn_predictions(data_matrix, y_predicted, indices_to_predict=utils.get_indices_to_predict(), output_file=SUBMISSION_FILE):
     """ Given vector of predictions, insert predictions into data matrix.
     :param data_matrix:
     :param y_predicted:
+    :param indices_to_predict:
     :return:
     """
-    indices_to_predict = utils.get_indices_to_predict()
     for a, index in enumerate(indices_to_predict):
         data_matrix[index] = y_predicted[a]
 
     # Test knn smoothing
     u, _ = get_embeddings(data_matrix, "svd", 20)
     data_matrix = utils.knn_smoothing(data_matrix, u)
-    utils.reconstruction_to_predictions(data_matrix, SUBMISSION_FILE)
+    utils.reconstruction_to_predictions(
+        data_matrix, output_file, indices_to_predict)
 
 
 def write_nn_score(score, embedding_type, embedding_dimensions,
@@ -256,6 +258,7 @@ def main():
         embedding_dimensions = 10
         architecture = (7,)
         n_training_samples = 100000
+        alpha = 0.001
     else:
         embedding_type = sys.argv[1]
         embedding_dimensions = int(sys.argv[2])
@@ -269,17 +272,15 @@ def main():
         architecture = (5,)
         nn_configuration = ("svd", 10, architecture, n_training_samples, alpha)
         classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_1 = predict_by_nn(data_matrix,
+        prediction_1, _ = predict_by_nn(data_matrix,
                                      nn_configuration, classifier)
         print(prediction_1[:100])
         architecture = (50,)
         nn_configuration = ("nmf", 100, architecture, n_training_samples, alpha)
         classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_2 = predict_by_nn(data_matrix,
-                                     nn_configuration, classifier)
-        prediction = np.mean([prediction_1, prediction_2], axis=0)
+        prediction_2, _ = predict_by_nn(data_matrix, nn_configuration, classifier)
+        prediction, _ = np.mean([prediction_1, prediction_2], axis=0)
         print(prediction_2[:100])
-        print(prediction[:100])
         write_nn_predictions(data_matrix, prediction)
 
     else:
@@ -288,9 +289,16 @@ def main():
                             architecture, n_training_samples,
                             alpha)
         classifier = MLPRegressor(architecture, alpha=alpha, warm_start=False)
-        prediction = predict_by_nn(data_matrix,
-                                   nn_configuration, classifier)
+        prediction, validation_predictions=predict_by_nn(data_matrix,
+                                                         nn_configuration, classifier)
         write_nn_predictions(data_matrix, prediction)
+        if utils.SAVE_META_PREDICTIONS:
+            write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
+                utils.ROOT_DIR + "data/validationIndices_first.csv"), output_file=utils.ROOT_DIR + 'data/meta_training_nn_stacking' +
+                datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
+            write_nn_predictions(data_matrix, validation_predictions, utils.get_validation_indices(
+                utils.ROOT_DIR + "data/validationIndices_second.csv"), output_file=utils.ROOT_DIR + 'data/meta_validation_nn_stacking'  +
+                datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 
 
 if __name__ == '__main__':
