@@ -171,7 +171,7 @@ def load_predictions_from_files(file_prefix='submission_'):
     files = [os.path.join(path, i) for i in os.listdir(path) if \
             os.path.isfile(os.path.join(path, i)) and file_prefix in i]
     all_ratings = []
-    for file in enumerate(files):
+    for file in files:
         print("loading {}".format(file))
         ratings = utils.load_ratings(file)
         ratings = utils.ratings_to_matrix(ratings)
