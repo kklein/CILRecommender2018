@@ -14,100 +14,27 @@ import model_reg_sgd
 import model_iterated_svd
 import model_sf
 
-# This file is meant as a template. Feel free to change, replace or copy.
-# TODO(b-hahn): Define and use meaningful naming scheme.
 SUBMISSION_FILE = os.path.join(
     utils.ROOT_DIR, 'data/ensemble' +
     datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-ENSEMBLE_INPUT_DIR = 'data/stacking'
+ENSEMBLE_INPUT_DIR = 'data/stacking/good_data/'
 STACKING_METHOD = 'lr'
 
 
-def run_stacked_svd():
-    # k = 10
-    # k = int(sys.argv[1])
-    # regularization = REGULARIZATION
-    # regularization = float(sys.argv[2])
-    ranks = [i for i in range(3, 100)]
-    regularizations = [0.0005 * i for i in range(400)]
-    k = np.random.choice(ranks)
-    regularization = np.random.choice(regularizations)
-    all_ratings = utils.load_ratings()
-    data = utils.ratings_to_matrix(all_ratings)
-    masked_data = utils.mask_validation(data)
-    # for every fold in training data, train one regressor via SGD and
-    # validate on the holdout set. I.e. if we have 4 folds, train 4 different SGD regressors
-    # and return each of their reconstructions. For testing, just average those 4 and see what the RMSE is - should be better than a single regressor.
-
-    # write a new version of compute RMSE that doesn't automatically load the validation indices from a file
-    reconstruction = []
-    lvl2_train_labels = []
-    # lvl2_validation_data = []
-    # lvl2_validation_labels = []
-
-    num_folds = 4
-    kfolds_indices = utils.k_folds(masked_data, num_folds)
-    for i, indices in enumerate(kfolds_indices):
-        # train using num_folds - 1 folds (i.e. all other folds)
-        training_indices = np.hstack([kfolds_indices[j] for j in range(len(kfolds_indices)) if j != i])
-        training_folds = np.zeros_like(masked_data)
-        training_folds[training_indices] = masked_data[training_indices]
-
-        validation_indices = [(indices[0][i], indices[1][i]) for i in range(len(indices[0]))]
-
-        # out_of_fold_prediction = predict_by_sgd(training_folds, k, regularization)
-        out_of_fold_prediction = np.zeros_like(masked_data)
-        reconstruction.append(out_of_fold_prediction)
-        # reconstruction.append(training_folds) # TODO: remove debug code
-
-        lvl2_train_labels.append(masked_data[validation_indices])
-
-        print(lvl2_train_labels)
-
-        rmse = utils.compute_fold_rmse(masked_data, reconstruction[-1], validation_indices)
-        rmse_debug = utils.compute_fold_rmse(data, reconstruction[-1],
-                                             validation_indices)  # TODO: remove debug code. This should equal 'rmse'
-        print("RMSE for fold {}: {}".format(i, rmse))
-        utils_sgd.write_sgd_score(rmse, k, regularization, SCORE_FILE)
-        utils.reconstruction_to_predictions(reconstruction[-1],
-                                            SUBMISSION_FILE.split('.csv')[0] + str(i) + '.csv', validation_indices)
-
-    # TODO: merge above results into one matrix of size num_folds x num_methods
-    # to do so, reshape reconstruction gt to n_samples (=n_folds) x n_features (=reconstruction.ravel())
-    # Q: need to pass full reconstruction, right?
-    reconstruction = np.array([r.ravel() for r in reconstruction])
-    print("reconstruction: ", reconstruction.shape)
-    print(reconstruction)
-
-    lvl2_train_labels = np.concatenate([r.ravel() for r in lvl2_train_labels])
-    print("lvl2_train_labels.shape:", lvl2_train_labels.shape)
-    lvl2_train_labels = lvl2_train_labels.ravel()
-    print(lvl2_train_labels)
-
-    # TODO: train NN on the matrix. The input are the out-of-fold predictions by each model,
-    # the labels are the ground truth ratings from the holdout fold.
-    regressor = MLPRegressor(hidden_layer_sizes=(100, 100))
-    regressor.fit(X=reconstruction, y=lvl2_train_labels)
-
-    # Once the model has been fit, run each model (or only reg_sgd) on the validation data and use what
-    # it outputs as the input for the NN. Get output and calculate RMSE.
-    lvl2_predictions = regressor.predict(X=data)
-    print(lvl2_predictions)
-
-#     reconstruction = predict_by_sgd(masked_data, k, regularization)
-#     rmse = utils.compute_rmse(data, reconstruction)
-
-def generate_debug_predictions():
-    all_ratings = utils.load_ratings()
-    data = utils.ratings_to_matrix(all_ratings)
-    # TODO: make sure the mask is on 20% not 10%
-    masked_data = utils.mask_validation(data)
-
-
 def stacking(meta_training, meta_validation):
+    """
+    Stacks/blends the predictions from all models and fits a model to the data 
+    in argument meta_training. Validation is done on data in meta_validation. Note 
+    that it is assumed that data is split into three parts, where meta_training 
+    equals the validation data for the base predictors and meta_validation equals 
+    hold-out data not seen by the base predictors.
+
+    :param meta_training:
+    :param meta_validation:
+    :return:
+    """
     ground_truth_ratings = utils.load_ratings()
     ground_truth_ratings = utils.ratings_to_matrix(ground_truth_ratings)
-    # TODO: rename function to something more appropriate?
 
     train_indices = utils.get_validation_indices(
         utils.ROOT_DIR + "data/validationIndices_first.csv")
@@ -122,33 +49,31 @@ def stacking(meta_training, meta_validation):
     test_ratings_predictions = load_predictions_from_files("sub")
     test_ratings_predictions = np.squeeze(
         [[rating[i, j] for rating in test_ratings_predictions] for i, j in test_indices])
-    print("test_ratings: ", test_ratings_predictions.shape)
 
     if STACKING_METHOD == 'lr':
         # using linear regression
         weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
-        print("Weights: {}\tres: {}".format(weights, res))
         lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
         lvl2_test = np.dot(weights, test_ratings_predictions.T)
-    # TODO: could try lr with predictions split into bins according to movie/ user support 
+    # TODO: could try lr with predictions split into bins according to movie/ user support
     # (i.e. separetly weight users with many ratings vs those with few ratings)
 
     elif STACKING_METHOD == 'pr':
         # using polynomial regression
         weights, res, _, _ = np.polyfit(train_ratings_predictions, train_ratings_target, deg=2, full=True)
-        print("Weights: {}\tres: {}".format(weights, res))
         lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
+        return
 
     elif STACKING_METHOD == 'nn':
         # using a neural net
-        regressor = MLPRegressor(hidden_layer_sizes=(50, 100))
+        regressor = MLPRegressor(hidden_layer_sizes=(200,))
         regressor.fit(X=train_ratings_predictions, y=train_ratings_target)
         lvl2_validation = regressor.predict(X=validation_ratings_predictions)
         lvl2_test = regressor.predict(X=test_ratings_predictions)
 
     elif STACKING_METHOD == "xgb":
         # using xgboost
-        regressor = xgb.XGBRegressor(max_depth=4, learning_rate=0.8, n_estimators=100, eta=0.99)
+        regressor = xgb.XGBRegressor(max_depth=8, learning_rate=0.02, n_estimators=30, eta=0.99)
         regressor.fit(train_ratings_predictions, train_ratings_target)
         lvl2_validation = regressor.predict(validation_ratings_predictions)
         lvl2_test = regressor.predict(test_ratings_predictions)
@@ -181,15 +106,13 @@ def stacking(meta_training, meta_validation):
     lvl2_validation = utils.clip(lvl2_validation)
     rmse = utils.compute_rmse(ground_truth_ratings,
                               lvl2_validation, validation_indices)
-    print("lvl2_predictions rmse:", rmse)
-    # utils.reconstruction_to_predictions(lvl2_predictions, SUBMISSION_FILE, validation_indices)
+    print("Stacking RMSE:", rmse)
     submission_predictions = utils.ratings_to_matrix([(test_indices[i][0], test_indices[i][1],
                                                        lvl2_test[i]) for i in range(len(test_indices))])
     submission_predictions = utils.clip(submission_predictions)
     utils.reconstruction_to_predictions(
         submission_predictions, SUBMISSION_FILE, test_indices)
-    print("Submission predictions saved in {}".format(SUBMISSION_FILE))
-    # utils.reconstruction_to_predictions(ground_truth_ratings, utils.ROOT_DIR + "gt_data.csv", validation_indices)
+    print("Stacking submission predictions saved in {}".format(SUBMISSION_FILE))
 
 
 def bagging(n):
@@ -197,6 +120,9 @@ def bagging(n):
     Implements simple bagging for CF: generate n matrices of same size as data by 
     sampling rows with replacement. Run prediction on each, combine predictions. This
     should improve results since it reduces overall variance.
+
+    :param n:
+    :return:
     """
     ranks = [i for i in range(3, 100)]
     regularizations = [0.0005 * i for i in range(400)]
@@ -206,7 +132,7 @@ def bagging(n):
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
 
-    predictor = 'sf'
+    predictor = 'svd'
     k = rank = 10
     reg_emb = 0.02
     reg_bias = 0.005
@@ -214,8 +140,6 @@ def bagging(n):
     predictions = []
     sampled_data = np.zeros_like(masked_data)
     sampled_users = np.zeros(masked_data.shape[0])
-    # TODO: make sure we're sampling users and not items
-    print(sampled_users.shape)
     for i in range(n):
         for r in range(masked_data.shape[0]):
             random_row = np.random.choice(masked_data.shape[0])
@@ -234,44 +158,32 @@ def bagging(n):
             u_embeddings, z_embeddings = utils_svd.get_embeddings(imputed_data, rank)
             sampled_prediction, _, _, _, _ = model_sf.predict_by_sf(sampled_data, rank, reg_emb, reg_bias, u_embeddings,
                                                                     z_embeddings)
-        # sort predictions by user and group duplicates
-        # then calculate mean predictions for duplicates.
         prediction = np.zeros_like(masked_data) * np.nan
         nan_count = 0
         for r in range(prediction.shape[0]):
-            # mean of rows in sampled_prediction where entries in sampled_users equal r
-            # TODO: why are there so many NaNs here?
             duplicate_user_predictions = sampled_prediction[np.argwhere(sampled_users == r), :]
             if duplicate_user_predictions.shape[0] > 0:
-                # print("For row {} calculating mean of {} duplicates".format(r, duplicate_user_predictions.shape))
-                # print(duplicate_user_predictions[:, 0, :10])
                 prediction[r, :] = np.mean(duplicate_user_predictions, axis=0)
-            # print("NaNs in row {}: {}".format(r, np.sum(np.isnan(prediction[r, :]))))
             if np.sum(np.isnan(prediction[r, :])) > 0:
                 nan_count += 1
-        print("nan_count:", nan_count)
-        # np.nan_to_num(prediction, copy=False)
-        print(prediction.shape, np.sum(np.isnan(prediction)))
         predictions.append(prediction)
 
     print("Finished {} runs of bagging...calculating mean of predictions".format(n))
-    #    print(np.unique(np.concatenate(predictions, axis=0), axis=0).shape[0])
-    print(np.sum(np.count_nonzero(np.sum(predictions, axis=0), axis=1) > 0))
     mean_predictions = compute_mean_predictions(predictions)
     rmse = utils.compute_rmse(data, mean_predictions)
-    print("mean_predictions rmse:", rmse)
+    print("Bagging RMSE:", rmse)
     utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
-    print("Predictions saved in {}".format(SUBMISSION_FILE))
+    print("Baggin submission predictions saved in {}".format(SUBMISSION_FILE))
     utils.reconstruction_to_predictions(
         mean_predictions,
         utils.ROOT_DIR + 'data/meta_training_bagging_' + predictor + '_' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/train_valid_80_10_10/validationIndices_first.csv"))
+        indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
     utils.reconstruction_to_predictions(
         mean_predictions,
         utils.ROOT_DIR + 'data/meta_validation_bagging_' + predictor + '_' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
         '.csv',
         indices_to_predict=utils.get_validation_indices(
-            utils.ROOT_DIR + "data/train_valid_80_10_10/validationIndices_second.csv"))
+            utils.ROOT_DIR + "data/validationIndices_second.csv"))
 
 
 def load_predictions_from_files(file_prefix='submission_'):
@@ -308,10 +220,10 @@ def main():
     # utils.reconstruction_to_predictions(mean_predictions, SUBMISSION_FILE)
     # print("Predictions saved in {}".format(SUBMISSION_FILE))
 
-    bagging(3)
+    # bagging(1)
 
-    # stacking(load_predictions_from_files('meta_training'),
-    #          load_predictions_from_files('meta_validation'))
+    stacking(load_predictions_from_files('meta_training'),
+             load_predictions_from_files('meta_validation'))
 
 
 if __name__ == '__main__':
