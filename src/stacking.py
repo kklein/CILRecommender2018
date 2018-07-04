@@ -10,7 +10,6 @@ import xgboost as xgb
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-ENSEMBLE_INPUT_DIR = 'data/stacking/90/'
 STACKING_METHOD = 'lr'
 
 
@@ -37,7 +36,7 @@ def stacking(meta_training, meta_validation):
         [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
     # validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
     test_indices = utils.get_indices_to_predict()
-    test_ratings_predictions = load_predictions_from_files("sub")
+    test_ratings_predictions = utils.load_predictions_from_files("sub")
     test_ratings_predictions = np.squeeze(
         [[rating[i, j] for rating in test_ratings_predictions] for i, j in test_indices])
 

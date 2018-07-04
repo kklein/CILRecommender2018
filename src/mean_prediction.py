@@ -6,14 +6,11 @@ import numpy as np
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-ENSEMBLE_INPUT_DIR = 'data/stacking/90/'
 
 
 def compute_mean_predictions(all_ratings):
     if np.sum(np.isnan(all_ratings)) > 0:
         print("Warning: NaNs enountered in compute_mean_predictions")
-    for r in all_ratings:
-        print("r:", r[2, :15])
     reconstruction = np.nanmean(np.array(all_ratings), axis=0)
     np.nan_to_num(reconstruction, copy=False)
     reconstruction = utils.impute_by_avg(reconstruction, by_row=False)

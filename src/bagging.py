@@ -10,7 +10,6 @@ import model_iterated_svd
 import model_sf
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-ENSEMBLE_INPUT_DIR = 'data/stacking/90/'
 BAGGING_METHOD = 'svd'
 
 
@@ -30,11 +29,6 @@ def bagging(n):
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
-
-    BAGGING_METHOD = 'svd'
-    k = rank = 10
-    reg_emb = 0.02
-    reg_bias = 0.005
 
     predictions = []
     sampled_data = np.zeros_like(masked_data)

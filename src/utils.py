@@ -15,6 +15,7 @@ VALIDATION_MASK_FILE_NAME = os.path.join(ROOT_DIR,
 
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
             'data/sampleSubmission.csv')
+ENSEMBLE_INPUT_DIR = 'data/stacking/good_data'
 ITEM_COUNT = 1000
 USER_COUNT = 10000
 WEIGHT_KNN = 0.001
@@ -23,12 +24,6 @@ USER_COUNT_WEIGHT = 10
 SAVE_META_PREDICTIONS = False
 
 def load_ratings(data_file = DATA_FILE):
-    """Loads the rating data from the specified file.
-    Does not yet build the rating matrix. Use 'ratings_to_matrix' to do that.
-    Assumes the file has a header (which is ignored), and that the ratings are
-    then specified as 'rXXX_cXXX,X', where the 'X' blanks specify the row, the
-    column, and then the actual (integer) rating.
-    """
     ratings = []
     with open(data_file, 'r') as file:
         # Read header.
@@ -226,13 +221,13 @@ def knn_smoothing(reconstruction, user_embeddings):
 
 
 def load_predictions_from_files(file_prefix='submission_'):
-    path = os.path.join(utils.ROOT_DIR, ENSEMBLE_INPUT_DIR)
+    path = os.path.join(ROOT_DIR, ENSEMBLE_INPUT_DIR)
     files = [os.path.join(path, i) for i in os.listdir(path) if \
             os.path.isfile(os.path.join(path, i)) and file_prefix in i]
     all_ratings = []
     for file in files:
         print("loading {}".format(file))
-        ratings = utils.load_ratings(file)
-        ratings = utils.ratings_to_matrix(ratings)
+        ratings = load_ratings(file)
+        ratings = ratings_to_matrix(ratings)
         all_ratings.append(ratings)
     return all_ratings
