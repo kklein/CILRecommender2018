@@ -93,7 +93,7 @@ def stacking(meta_training, meta_validation):
 
 
 def main():
-    stacking(load_predictions_from_files('meta_training'), load_predictions_from_files('meta_validation'))
+    stacking(utils.load_predictions_from_files('meta_training'), utils.load_predictions_from_files('meta_validation'))
 
 
 if __name__ == '__main__':

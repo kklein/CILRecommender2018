@@ -195,13 +195,6 @@ def compute_rmse(data, prediction, indices=None):
     return np.sqrt(squared_error / len(indices))
 
 
-def compute_fold_rmse(data, prediction, validation_indices):
-    squared_error = 0
-    for i, j in validation_indices:
-        squared_error += (data[i][j] - prediction[i][j]) ** 2
-    return np.sqrt(squared_error / len(validation_indices))
-
-
 def knn_smoothing(reconstruction, user_embeddings):
     normalized_user_embeddings = normalize(user_embeddings)
     knn = NearestNeighbors(n_neighbors=N_NEIGHBORS + 1)
@@ -232,18 +225,14 @@ def knn_smoothing(reconstruction, user_embeddings):
     return smoothed_data
 
 
-def k_folds(data, n_folds):
-    """
-    return n_folds splits of the data where the nonzero entries are equally distributed 
-    """
-    # TODO: shuffle indices, make sure we don't lose track
-    nonzero_indices = np.nonzero(data)
-    # print(nonzero_indices[1:2])
-    print("Nonzero shape: ", nonzero_indices[0].shape)
-
-    fold_splits = np.round(np.linspace(0, len(nonzero_indices[0]), n_folds + 1)).astype(int)
-    print("Splitting data into folds at {}".format(fold_splits))
-    folds_indices = [[nonzero_indices[j][fold_splits[i]:fold_splits[i + 1]] for j in range(2)]
-                     for i in range(n_folds)]
-
-    return folds_indices
+def load_predictions_from_files(file_prefix='submission_'):
+    path = os.path.join(utils.ROOT_DIR, ENSEMBLE_INPUT_DIR)
+    files = [os.path.join(path, i) for i in os.listdir(path) if \
+            os.path.isfile(os.path.join(path, i)) and file_prefix in i]
+    all_ratings = []
+    for file in files:
+        print("loading {}".format(file))
+        ratings = utils.load_ratings(file)
+        ratings = utils.ratings_to_matrix(ratings)
+        all_ratings.append(ratings)
+    return all_ratings

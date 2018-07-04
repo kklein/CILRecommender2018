@@ -8,7 +8,6 @@ import utils_svd
 import model_reg_sgd
 import model_iterated_svd
 import model_sf
-from mean_prediction import compute_mean_predictions
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 ENSEMBLE_INPUT_DIR = 'data/stacking/90/'
