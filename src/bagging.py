@@ -22,10 +22,14 @@ def bagging(n):
     :param n:
     :return:
     """
+    reg_emb = 0.02
+    reg_bias = 0.005
     ranks = [i for i in range(3, 100)]
     regularizations = [0.0005 * i for i in range(400)]
     k = np.random.choice(ranks)
+    rank = np.random.choice(ranks)
     regularization = np.random.choice(regularizations)
+
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data)
@@ -59,7 +63,7 @@ def bagging(n):
         predictions.append(prediction)
 
     print("Finished {} runs of bagging...calculating mean of predictions".format(n))
-    mean_predictions = compute_mean_predictions(predictions)
+    mean_predictions = utils.compute_mean_predictions(predictions)
     rmse = utils.compute_rmse(data, mean_predictions)
     print("Bagging RMSE:", rmse)
 
@@ -79,6 +83,7 @@ def bagging(n):
 
 def main():
     bagging(1)
+
 
 if __name__ == '__main__':
     main()

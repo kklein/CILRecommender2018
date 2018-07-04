@@ -3,22 +3,21 @@ from datetime import datetime
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
-from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import Ridge
 import xgboost as xgb
 
 import utils
 
 SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-STACKING_METHOD = 'lr'
+STACKING_METHOD = 'rr'
 
 
 def stacking(meta_training, meta_validation):
     """
-    Stacks/blends the predictions from all models and fits a model to the data 
-    in argument meta_training. Validation is done on data in meta_validation. Note 
-    that it is assumed that data is split into three parts, where meta_training 
-    equals the validation data for the base predictors and meta_validation equals 
+    Stacks/blends the predictions from all models and fits a model to the data
+    in argument meta_training. Validation is done on data in meta_validation. Note
+    that it is assumed that data is split into three parts, where meta_training
+    equals the validation data for the base predictors and meta_validation equals
     hold-out data not seen by the base predictors.
 
     :param meta_training:
@@ -34,7 +33,6 @@ def stacking(meta_training, meta_validation):
     validation_indices = utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv")
     validation_ratings_predictions = np.squeeze(
         [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
-    # validation_ratings_target = [ground_truth_ratings[i, j] for i, j in validation_indices]
     test_indices = utils.get_indices_to_predict()
     test_ratings_predictions = utils.load_predictions_from_files("sub")
     test_ratings_predictions = np.squeeze(
@@ -42,11 +40,8 @@ def stacking(meta_training, meta_validation):
 
     if STACKING_METHOD == 'lr':
         # using linear regression
-        weights, res, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
+        weights, _, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
         lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
-        lvl2_test = np.dot(weights, test_ratings_predictions.T)
-    # TODO: could try lr with predictions split into bins according to movie/ user support
-    # (i.e. separetly weight users with many ratings vs those with few ratings)
 
     elif STACKING_METHOD == 'nn':
         # using a neural net
@@ -57,19 +52,10 @@ def stacking(meta_training, meta_validation):
 
     elif STACKING_METHOD == "xgb":
         # using xgboost
-        regressor = xgb.XGBRegressor(max_depth=8, learning_rate=0.02, n_estimators=30, eta=0.99)
+        regressor = xgb.XGBRegressor(max_depth=4, learning_rate=0.02, n_estimators=500, eta=0.99)
         regressor.fit(train_ratings_predictions, train_ratings_target)
         lvl2_validation = regressor.predict(validation_ratings_predictions)
         lvl2_test = regressor.predict(test_ratings_predictions)
-
-    elif STACKING_METHOD == "krr":
-        # kernel ridge regression
-        regressor = KernelRidge(solver='lsqr')
-        regressor.fit(train_ratings_predictions, train_ratings_target)
-        lvl2_validation = regressor.predict(validation_ratings_predictions)
-        lvl2_test = regressor.predict(test_ratings_predictions)
-        print("Implement lvl2_test!")
-        return
 
     elif STACKING_METHOD == "rr":
         # ridge regression

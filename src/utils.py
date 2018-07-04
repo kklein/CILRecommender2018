@@ -231,3 +231,12 @@ def load_predictions_from_files(file_prefix='submission_'):
         ratings = ratings_to_matrix(ratings)
         all_ratings.append(ratings)
     return all_ratings
+
+
+def compute_mean_predictions(all_ratings):
+    if np.sum(np.isnan(all_ratings)) > 0:
+        print("Warning: NaNs enountered in compute_mean_predictions")
+    reconstruction = np.nanmean(np.array(all_ratings), axis=0)
+    np.nan_to_num(reconstruction, copy=False)
+    reconstruction = utils.impute_by_avg(reconstruction, by_row=False)
+    return reconstruction
