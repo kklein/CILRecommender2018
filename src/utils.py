@@ -56,38 +56,38 @@ def mask_validation(data, use_three_way):
         mask_file = VALIDATION_MASK_FILE_NAME
     else:
         mask_file = VALIDATION_FILE_NAME
-    mask_indices = get_indeces_from_file(mask_file)
+    mask_indices = get_indices_from_file(mask_file)
     for row_index, col_index in mask_indices:
         masked_data[row_index][col_index] = 0
     return masked_data
 
 def get_validation_indices(use_three_way):
     if use_three_way:
-        validation_indices = get_indeces_from_file(AUX)
+        validation_indices = get_indices_from_file(AUX)
     else:
-        validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+        validation_indices = get_indices_from_file(VALIDATION_FILE_NAME)
     return validation_indices
 
 def get_meta_validation_indices():
-    return get_indeces_from_file(META_VALIDATION_FILE_NAME)
+    return get_indices_from_file(META_VALIDATION_FILE_NAME)
 
-def get_observed_indeces(data):
+def get_observed_indices(data):
     row_indices, col_indices = np.where(data != 0)
     return list(zip(row_indices, col_indices))
 
-def get_unobserved_indeces(data):
+def get_unobserved_indices(data):
     row_indices, col_indices = np.where(data == 0)
     return list(zip(row_indices, col_indices))
 
-def get_indeces_from_file(file_name):
-    indeces = []
+def get_indices_from_file(file_name):
+    indices = []
     with open(file_name, 'r') as file:
         # Read header.
         _ = file.readline()
         for line in file:
             i, j = line.split(",")
-            indeces.append((int(i), int(j)))
-    return indeces
+            indices.append((int(i), int(j)))
+    return indices
 
 def get_indices_to_predict():
     """Get list of indices to predict from sample submission file.
@@ -124,9 +124,10 @@ def save_ensembling_predictions(reconstruction, name):
     reconstruction_to_predictions(
         reconstruction, ROOT_DIR + 'data/meta_training_' + name + '_stacking'
         + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-        indices_to_predict=get_validation_indices(True))
+        indices_to_predict=get_validation_indices(use_three_way=True))
     reconstruction_to_predictions(
-        reconstruction, ROOT_DIR + 'data/meta_validation_' + name + '_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        reconstruction, ROOT_DIR + 'data/meta_validation_' + name + '_stacking'
+        + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
         indices_to_predict=get_meta_validation_indices())
 
 def clip(data):
@@ -135,8 +136,8 @@ def clip(data):
     return data
 
 def ampute_reconstruction(reconstruction, data):
-    observed_indeces = get_observed_indeces(data)
-    for row_index, col_index in observed_indeces:
+    observed_indices = get_observed_indices(data)
+    for row_index, col_index in observed_indices:
         reconstruction[row_index][col_index] = data[row_index][col_index]
 
 def impute_by_avg(data, by_row):
@@ -210,7 +211,7 @@ def impute_by_variance(data):
 
 def compute_rmse(data, prediction, indices=None):
     if indices is None:
-        indices = get_indeces_from_file(VALIDATION_FILE_NAME)
+        indices = get_indices_from_file(VALIDATION_FILE_NAME)
     squared_error = 0
     for i, j in indices:
         squared_error += (data[i][j] - prediction[i][j]) ** 2
@@ -257,11 +258,7 @@ def load_predictions_from_files(file_prefix='submission_'):
         all_ratings.append(ratings)
     return all_ratings
 
-# TODO: Is there a concrete threat wrt nans?
 def compute_mean_predictions(all_ratings):
-    if np.sum(np.isnan(all_ratings)) > 0:
-        print("Warning: NaNs enountered in compute_mean_predictions")
-    reconstruction = np.nanmean(np.array(all_ratings), axis=0)
-    np.nan_to_num(reconstruction, copy=False)
+    reconstruction = np.mean(np.array(all_ratings), axis=0)
     reconstruction = impute_by_avg(reconstruction, by_row=False)
     return reconstruction

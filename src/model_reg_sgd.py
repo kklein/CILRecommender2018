@@ -16,7 +16,7 @@ EPSILON = 0.00001
 def learn(masked_data, u_embeddings, z_embeddings, u_bias, z_bias, n_epochs,
           regularization):
     last_rmse = 5
-    training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
+    training_indices = utils.get_indices_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(masked_data[np.nonzero(masked_data)])
     for i in range(n_epochs):
         print("Epoch {0}:".format(i))
@@ -26,7 +26,6 @@ def learn(masked_data, u_embeddings, z_embeddings, u_bias, z_bias, n_epochs,
             u_values = u_embeddings[k, :]
             z_values = z_embeddings[l, :]
             residual = masked_data[k, l] - u_bias[k] - z_bias[l] - np.dot(u_values, z_values)
-            # residual = masked_data[k, l] - total_average - np.dot(u_values, z_values)
             u_embeddings[k, :] *= (1 - regularization * LEARNING_RATE)
             u_embeddings[k, :] += LEARNING_RATE * residual * z_values
             z_embeddings[l, :] *= (1 - regularization * LEARNING_RATE)
@@ -37,11 +36,10 @@ def learn(masked_data, u_embeddings, z_embeddings, u_bias, z_bias, n_epochs,
             z_bias[l] += LEARNING_RATE * residual
         reconstruction = utils_sgd.reconstruct(
             u_embeddings, z_embeddings, u_bias, z_bias)
-        # reconstruction = np.dot(u_embeddings, z_embeddings.T) + total_average
         # Training rmse.
         rmse = utils.compute_rmse(
             masked_data, reconstruction,
-            utils.get_observed_indeces(masked_data))
+            utils.get_observed_indices(masked_data))
         print(rmse)
         if abs(last_rmse - rmse) < EPSILON:
             break
@@ -52,7 +50,6 @@ def predict_by_sgd(masked_data, approximation_rank=None,
                    regularization=REGULARIZATION, u_embeddings=None,
                    z_embeddings=None, n_epochs=N_EPOCHS):
     np.random.seed(42)
-
     if u_embeddings is None and z_embeddings is None:
         print("Initialize embeddings.")
         u_embeddings, z_embeddings = utils_sgd.get_initialized_embeddings(
@@ -75,9 +72,9 @@ def main():
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
     masked_data = utils.mask_validation(data, False)
-    svd_initiliazied = random.choice([True, False])
+    svd_initialized = np.random.choice([True, False])
 
-    if svd_initiliazied:
+    if svd_initialized:
         initialization_string = 'svd'
         imputed_data = np.copy(masked_data)
         utils.impute_by_variance(imputed_data)

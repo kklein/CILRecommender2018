@@ -31,8 +31,6 @@ def bagging(n_matrices, bagging_method, data, masked_data, rank,
     for _ in range(n_matrices):
         for new_row_index in range(masked_data.shape[0]):
             random_row = np.random.choice(masked_data.shape[0])
-            # Keep track of which user (i.e. row) is added. Later, average
-            # ratings of duplicates of each user.
             sampled_users[new_row_index] = random_row
             sampled_data[new_row_index, :] = masked_data[random_row, :]
         if bagging_method == 'reg_sgd':
@@ -71,13 +69,13 @@ def bagging(n_matrices, bagging_method, data, masked_data, rank,
         mean_predictions,
         utils.ROOT_DIR + 'data/meta_training_bagging_' + bagging_method + '_' +
         datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-        indices_to_predict=utils.get_validation_indices(True))
+        indices_to_predict=utils.get_validation_indices(use_three_way=True))
     utils.reconstruction_to_predictions(
         mean_predictions,
         utils.ROOT_DIR + 'data/meta_validation_bagging_' + bagging_method + '_'
         + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
         indices_to_predict=utils.get_meta_validation_indices())
-    print("Baggin submission predictions saved in {}".format(SUBMISSION_FILE))
+    print("Bagging submission predictions saved in {}".format(SUBMISSION_FILE))
 
 def main():
     bagging_method = 'svd'

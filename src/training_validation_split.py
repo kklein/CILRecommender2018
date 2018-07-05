@@ -14,7 +14,7 @@ def main():
     np.random.seed(10)
     all_ratings = utils.load_ratings('../data/data_train.csv')
     data_matrix = utils.ratings_to_matrix(all_ratings)
-    observed_indices = utils.get_observed_indeces(data_matrix)
+    observed_indices = utils.get_observed_indices(data_matrix)
     np.random.shuffle(observed_indices)
     split_threshold = round(TRAIN_PROPORTION * len(observed_indices))
     training_indices = observed_indices[:split_threshold]

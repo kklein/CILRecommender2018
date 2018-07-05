@@ -33,15 +33,19 @@ def stacking(meta_training, meta_validation):
     train_ratings_target = [
         ground_truth_ratings[i, j] for i, j in train_indices]
     validation_indices = utils.get_meta_validation_indices()
-    validation_ratings_predictions = np.squeeze(
-        [[rating[i, j] for rating in meta_validation] for i, j in validation_indices])
+    validation_ratings_predictions = np.squeeze([
+        [rating[i, j] for rating in meta_validation] for i, j in
+        validation_indices])
     test_indices = utils.get_indices_to_predict()
     test_ratings_predictions = utils.load_predictions_from_files("sub")
-    test_ratings_predictions = np.squeeze(
-        [[rating[i, j] for rating in test_ratings_predictions] for i, j in test_indices])
+    test_ratings_predictions = np.squeeze([
+        [rating[i, j] for rating in test_ratings_predictions] for i, j in
+        test_indices])
 
     if STACKING_METHOD == 'lr':
-        weights, _, _, _ = np.linalg.lstsq(train_ratings_predictions, train_ratings_target)
+        weights, _, _, _ = np.linalg.lstsq(
+            train_ratings_predictions, train_ratings_target)
+        # TODO(b-hahn): Rename variables. Use reference to 'meta'.
         lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
     else:
         if STACKING_METHOD == 'nn':

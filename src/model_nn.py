@@ -114,7 +114,7 @@ def prepare_data_for_nn(u_embeddings, z_embeddings, data_matrix,
     and adds corresponding rating from data matrix.
     Returns: x_train, y_train, x_validate, y_validate."""
     # TODO(kkleindev): Replace constant by variable.
-    validation_indices = utils.get_validation_indices(False)
+    validation_indices = utils.get_validation_indices(use_three_way=False)
     observed_indices = zip(*np.nonzero(data_matrix))
     train_indices = set(observed_indices).difference(set(validation_indices))
     train_indices = list(train_indices)
@@ -165,13 +165,13 @@ def write_nn_score(score, embedding_type, embedding_dimensions,
             score, embedding_type, embedding_dimensions, architecture,
             n_training_samples, alpha))
 
-def predict_by_nn(data_matrix, nn_configuration, classifier):
+def predict_by_nn(data_matrix, nn_configuration, regressor):
     """ Given data matrix as constructed from original input, imputed data as
-    obtained through preprocessing, a nn_configuration and a classifier, this
+    obtained through preprocessing, a nn_configuration and a regressor, this
     function returns a vector of predictions for unobserved entries.
     :param data_matrix:
     :param nn_configuration:
-    :param classifier:
+    :param regressor:
     :return:
     """
     embedding_type, embedding_dimensions, architecture, \
@@ -181,14 +181,14 @@ def predict_by_nn(data_matrix, nn_configuration, classifier):
     x_train, y_train, x_validate, y_validate, x_test = \
         prepare_data_for_nn(u_embeddings, z_embeddings,
                             data_matrix, n_training_samples)
-    print("Classifier parameters {0}".format(classifier.get_params()))
-    classifier.fit(x_train, y_train)
-    y_validate_hat = classifier.predict(x_validate)
+    print("regressor parameters {0}".format(regressor.get_params()))
+    regressor.fit(x_train, y_train)
+    y_validate_hat = regressor.predict(x_validate)
     rmse = np.sqrt(mean_squared_error(y_validate, y_validate_hat))
     print("RMSE: %f" % rmse)
     write_nn_score(rmse, embedding_type, embedding_dimensions,
                    architecture, len(x_train), alpha)
-    y_predicted = classifier.predict(x_test)
+    y_predicted = regressor.predict(x_test)
     return y_predicted
 
 def main():
@@ -217,22 +217,22 @@ def main():
     if ENSEMBLE:
         architecture = (5,)
         nn_configuration = ("svd", 10, architecture, n_training_samples, alpha)
-        classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_1, _ = predict_by_nn(
-            data_matrix, nn_configuration, classifier)
+        regressor = MLPRegressor(architecture, alpha=alpha)
+        prediction_1 = predict_by_nn(
+            data_matrix, nn_configuration, regressor)
         architecture = (50,)
         nn_configuration = ("nmf", 100, architecture, n_training_samples, alpha)
-        classifier = MLPRegressor(architecture, alpha=alpha)
-        prediction_2, _ = predict_by_nn(
-            data_matrix, nn_configuration, classifier)
+        regressor = MLPRegressor(architecture, alpha=alpha)
+        prediction_2 = predict_by_nn(
+            data_matrix, nn_configuration, regressor)
         prediction, _ = np.mean([prediction_1, prediction_2], axis=0)
         write_nn_predictions(data_matrix, prediction)
 
     else:
         nn_configuration = (embedding_type, embedding_dimensions,
                             architecture, n_training_samples, alpha)
-        classifier = MLPRegressor(architecture, alpha=alpha, warm_start=False)
-        prediction, _ = predict_by_nn(data_matrix, nn_configuration, classifier)
+        regressor = MLPRegressor(architecture, alpha=alpha, warm_start=False)
+        prediction = predict_by_nn(data_matrix, nn_configuration, regressor)
         write_nn_predictions(data_matrix, prediction)
         if utils.SAVE_META_PREDICTIONS:
             utils.save_ensembling_predictions(data_matrix, 'nn')

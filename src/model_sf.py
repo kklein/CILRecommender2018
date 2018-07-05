@@ -16,7 +16,7 @@ EPSILON = 0.0001
 def learn(data, u_embeddings, z_embeddings, u_bias, z_bias, n_epochs,
           reg_emb, reg_bias):
     # residual_data = np.copy(data)
-    training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
+    training_indices = utils.get_indices_from_file(utils.TRAINING_FILE_NAME)
     total_average = np.mean(data[np.nonzero(data)])
     approximation_rank = u_embeddings.shape[1]
     for feature_index in range(approximation_rank):
@@ -47,7 +47,7 @@ def learn(data, u_embeddings, z_embeddings, u_bias, z_bias, n_epochs,
                 u_embeddings[:, :feature_index + 1],
                 z_embeddings[:, :feature_index + 1], u_bias, z_bias)
             # residual_data = data - reconstruction
-            rmse = utils.compute_rmse(data, reconstruction, utils.get_observed_indeces(data))
+            rmse = utils.compute_rmse(data, reconstruction, utils.get_observed_indices(data))
             if abs(last_rmse - rmse) < EPSILON:
                 break
             last_rmse = rmse

@@ -9,7 +9,7 @@ def write_sgd_score(score, approximation_rank, reg_emb, reg_bias, smoothed,
             initialization_string, score))
 
 def get_initialized_biases(data):
-    training_indices = utils.get_indeces_from_file(utils.TRAINING_FILE_NAME)
+    training_indices = utils.get_indices_from_file(utils.TRAINING_FILE_NAME)
     u_bias = np.zeros(data.shape[0], dtype=np.float128)
     u_counters = np.zeros(data.shape[0], dtype=np.float128)
     z_bias = np.zeros(data.shape[1], dtype=np.float128)
