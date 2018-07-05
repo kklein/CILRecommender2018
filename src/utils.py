@@ -1,17 +1,22 @@
 import copy
 import os
+from datetime import datetime
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 DATA_FILE = os.path.join(ROOT_DIR, 'data/data_train.csv')
-TRAINING_FILE_NAME = os.path.join(ROOT_DIR, \
-            'data/trainingIndices.csv')
-VALIDATION_FILE_NAME = os.path.join(ROOT_DIR,
-            'data/validationIndices.csv')
-VALIDATION_MASK_FILE_NAME = os.path.join(ROOT_DIR,
-            'data/validationIndices.csv')
+TRAINING_FILE_NAME = os.path.join(
+    ROOT_DIR, 'data/trainingIndices.csv')
+VALIDATION_FILE_NAME = os.path.join(
+    ROOT_DIR, 'data/validationIndices.csv')
+VALIDATION_MASK_FILE_NAME = os.path.join(
+    ROOT_DIR, 'data/train_valid_80_10_10/validationIndices_mask.csv')
+AUX = os.path.join(
+    ROOT_DIR, 'data/train_valid_80_10_10/validationIndices_first.csv')
+META_VALIDATION_FILE_NAME = os.path.join(
+    ROOT_DIR, 'data/train_valid_80_10_10/validationIndices_second.csv')
 
 SAMPLE_SUBMISSION = os.path.join(ROOT_DIR, \
             'data/sampleSubmission.csv')
@@ -23,7 +28,7 @@ N_NEIGHBORS = 3
 USER_COUNT_WEIGHT = 10
 SAVE_META_PREDICTIONS = False
 
-def load_ratings(data_file = DATA_FILE):
+def load_ratings(data_file=DATA_FILE):
     ratings = []
     with open(data_file, 'r') as file:
         # Read header.
@@ -45,17 +50,26 @@ def ratings_to_matrix(ratings):
         matrix[row, col] = rating
     return matrix
 
-def mask_validation(data):
+def mask_validation(data, use_three_way):
     masked_data = np.copy(data)
-    validation_indices = get_indeces_from_file(VALIDATION_MASK_FILE_NAME)
-    for row_index, col_index in validation_indices:
+    if use_three_way:
+        mask_file = VALIDATION_MASK_FILE_NAME
+    else:
+        mask_file = VALIDATION_FILE_NAME
+    mask_indices = get_indeces_from_file(mask_file)
+    for row_index, col_index in mask_indices:
         masked_data[row_index][col_index] = 0
     return masked_data
 
-
-def get_validation_indices(file_name=VALIDATION_FILE_NAME):
-    validation_indices = get_indeces_from_file(file_name)
+def get_validation_indices(use_three_way):
+    if use_three_way:
+        validation_indices = get_indeces_from_file(AUX)
+    else:
+        validation_indices = get_indeces_from_file(VALIDATION_FILE_NAME)
     return validation_indices
+
+def get_meta_validation_indices():
+    return get_indeces_from_file(META_VALIDATION_FILE_NAME)
 
 def get_observed_indeces(data):
     row_indices, col_indices = np.where(data != 0)
@@ -96,11 +110,24 @@ def write_ratings(predictions, submission_file):
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
-def reconstruction_to_predictions(reconstruction, submission_file, indices_to_predict=get_indices_to_predict()):
+# TODO(kkleindev): Rename.
+def reconstruction_to_predictions(
+        reconstruction, submission_file, indices_to_predict=None):
+    if indices_to_predict is None:
+        indices_to_predict = get_indices_to_predict()
     enumerate_predictions = lambda t: (
         t[0] + 1, t[1] + 1, reconstruction[t[0], t[1]])
     predictions = list(map(enumerate_predictions, indices_to_predict))
     write_ratings(predictions, submission_file)
+
+def save_ensembling_predictions(reconstruction, name):
+    reconstruction_to_predictions(
+        reconstruction, ROOT_DIR + 'data/meta_training_' + name + '_stacking'
+        + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        indices_to_predict=get_validation_indices(True))
+    reconstruction_to_predictions(
+        reconstruction, ROOT_DIR + 'data/meta_validation_' + name + '_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
+        indices_to_predict=get_meta_validation_indices())
 
 def clip(data):
     data[data > 5] = 5
@@ -189,7 +216,6 @@ def compute_rmse(data, prediction, indices=None):
         squared_error += (data[i][j] - prediction[i][j]) ** 2
     return np.sqrt(squared_error / len(indices))
 
-
 def knn_smoothing(reconstruction, user_embeddings):
     normalized_user_embeddings = normalize(user_embeddings)
     knn = NearestNeighbors(n_neighbors=N_NEIGHBORS + 1)
@@ -219,7 +245,6 @@ def knn_smoothing(reconstruction, user_embeddings):
     smoothed_data = clip(smoothed_data)
     return smoothed_data
 
-
 def load_predictions_from_files(file_prefix='submission_'):
     path = os.path.join(ROOT_DIR, ENSEMBLE_INPUT_DIR)
     files = [os.path.join(path, i) for i in os.listdir(path) if \
@@ -232,11 +257,11 @@ def load_predictions_from_files(file_prefix='submission_'):
         all_ratings.append(ratings)
     return all_ratings
 
-
+# TODO: Is there a concrete threat wrt nans?
 def compute_mean_predictions(all_ratings):
     if np.sum(np.isnan(all_ratings)) > 0:
         print("Warning: NaNs enountered in compute_mean_predictions")
     reconstruction = np.nanmean(np.array(all_ratings), axis=0)
     np.nan_to_num(reconstruction, copy=False)
-    reconstruction = utils.impute_by_avg(reconstruction, by_row=False)
+    reconstruction = impute_by_avg(reconstruction, by_row=False)
     return reconstruction

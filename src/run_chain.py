@@ -8,9 +8,9 @@ import utils_svd as svd
 import model_sf as sf
 import utils
 
-SUBMISSION_FILE = os.path.join(utils.ROOT_DIR,\
-        'data/chain_'  +
-        datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
+SUBMISSION_FILE = os.path.join(
+    utils.ROOT_DIR, 'data/chain_'  +
+    datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/chain_scores.csv')
 
 N_META_EPOCHS = 6
@@ -32,7 +32,7 @@ def main():
         n_meta_epochs = int(sys.argv[2])
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
-    masked_data = utils.mask_validation(data)
+    masked_data = utils.mask_validation(data, False)
     reconstruction = np.copy(masked_data)
     utils.impute_by_variance(reconstruction)
     u_embeddings, z_embeddings = svd.get_embeddings(
@@ -55,16 +55,7 @@ def main():
     write_chain_score(approximation_rank, n_meta_epochs, rmse)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
     if utils.SAVE_META_PREDICTIONS:
-        utils.reconstruction_to_predictions(
-            reconstruction,
-            utils.ROOT_DIR + 'data/meta_training_chain_svd_stacking' +
-            datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_first.csv"))
-        utils.reconstruction_to_predictions(
-            reconstruction,
-            utils.ROOT_DIR + 'data/meta_validation_chain_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
-            '.csv',
-            indices_to_predict=utils.get_validation_indices(utils.ROOT_DIR + "data/validationIndices_second.csv"))
+        utils.save_ensembling_predictions(reconstruction, 'chain_sf')
 
 if __name__ == '__main__':
     main()

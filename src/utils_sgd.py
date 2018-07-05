@@ -25,9 +25,7 @@ def get_initialized_biases(data):
     for k in range(data.shape[0]):
         u_bias[k] = ((u_bias[k] + 25 * total_average) / (25 + u_counters[k]))\
                 - total_average
-        # u_bias[k] = (u_bias[k] / u_counters[k]) - total_average
     for l in range(data.shape[1]):
-        # z_bias[l] = (z_bias[l] / z_counters[l]) - total_average
         z_bias[l] = ((z_bias[l] + 25 * total_average) / (25 + z_counters[l]))\
                 - total_average
     return u_bias, z_bias

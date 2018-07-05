@@ -1,12 +1,12 @@
 import os
 import random
-from datetime import datetime
 import numpy as np
 import utils
 import utils_sgd
 import utils_svd as svd
 
-SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/ensemble' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
+SUBMISSION_FILE = os.path.join(utils.ROOT_DIR, 'data/submission_reg_sgd.csv')
+
 SCORE_FILE = os.path.join(utils.ROOT_DIR, 'analysis/reg_sgd100_scores.csv')
 N_EPOCHS = 100
 LEARNING_RATE = 0.001
@@ -67,17 +67,14 @@ def predict_by_sgd(masked_data, approximation_rank=None,
 
 def main():
     np.seterr(all='raise')
-    # k = 7
-    # k = int(sys.argv[1])
-    # regularization = 0.02
-    # regularization = float(sys.argv[2])
     ranks = [i for i in range(3, 25)]
     regularizations = [0.01, 0.02, 0.03, 0.05, 0.1]
     rank = np.random.choice(ranks)
     regularization = np.random.choice(regularizations)
+
     all_ratings = utils.load_ratings()
     data = utils.ratings_to_matrix(all_ratings)
-    masked_data = utils.mask_validation(data)
+    masked_data = utils.mask_validation(data, False)
     svd_initiliazied = random.choice([True, False])
 
     if svd_initiliazied:
@@ -91,7 +88,7 @@ def main():
         initialization_string = 'rand'
         reconstruction, u_embeddings, _ = predict_by_sgd(
             masked_data, rank, regularization)
-    print(initialization_string)
+
     rmse = utils.compute_rmse(data, reconstruction)
     print('rmse before smoothing: %f' % rmse)
     utils_sgd.write_sgd_score(
@@ -104,18 +101,7 @@ def main():
         rmse, rank, regularization, regularization, 'S', initialization_string, SCORE_FILE)
     utils.reconstruction_to_predictions(reconstruction, SUBMISSION_FILE)
     if utils.SAVE_META_PREDICTIONS:
-        utils.reconstruction_to_predictions(
-            reconstruction,
-            utils.ROOT_DIR + 'data/meta_training_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv',
-            indices_to_predict=utils.get_validation_indices(
-                utils.ROOT_DIR + "data/validationIndices_first.csv"))
-        utils.reconstruction_to_predictions(
-            reconstruction,
-            utils.ROOT_DIR + 'data/meta_validation_reg_svd_stacking' + datetime.now().strftime('%Y-%b-%d-%H-%M-%S') +
-            '.csv',
-            indices_to_predict=utils.get_validation_indices(
-                utils.ROOT_DIR + "data/validationIndices_second.csv"))
-
+        utils.save_ensembling_predictions(reconstruction, 'reg_svd')
 
 if __name__ == '__main__':
     main()

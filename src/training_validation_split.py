@@ -4,7 +4,6 @@ import utils
 TRAIN_PROPORTION = 0.9
 THREE_WAY_SPLIT = False
 
-
 def write_indices_to_file(indices, file_name):
     with open(file_name, 'w') as file:
         file.write('Row,Column\n')
@@ -24,10 +23,16 @@ def main():
     validation_indices.sort(key=lambda x: (x[0], x[1]))
     write_indices_to_file(training_indices, utils.TRAINING_FILE_NAME)
     if THREE_WAY_SPLIT:
-        validation_indices_first = validation_indices[:int(np.floor(len(validation_indices) / 2))]
-        validation_indices_second = validation_indices[int(np.floor(len(validation_indices) / 2)):]
-        write_indices_to_file(validation_indices_first, utils.VALIDATION_FILE_NAME.split(".csv")[0] + "_first.csv")
-        write_indices_to_file(validation_indices_second, utils.VALIDATION_FILE_NAME.split(".csv")[0] + "_second.csv")
+        validation_indices_first = validation_indices[
+            :int(np.floor(len(validation_indices) / 2))]
+        validation_indices_second = validation_indices[
+            int(np.floor(len(validation_indices) / 2)):]
+        write_indices_to_file(
+            validation_indices_first,
+            utils.VALIDATION_FILE_NAME.split(".csv")[0] + "_first.csv")
+        write_indices_to_file(
+            validation_indices_second,
+            utils.VALIDATION_FILE_NAME.split(".csv")[0] + "_second.csv")
     else:
         write_indices_to_file(validation_indices, utils.VALIDATION_FILE_NAME)
 
