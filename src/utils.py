@@ -110,7 +110,6 @@ def write_ratings(predictions, submission_file):
         for i, j, prediction in predictions:
             file.write('r%d_c%d,%f\n' % (i, j, prediction))
 
-# TODO(kkleindev): Rename.
 def reconstruction_to_predictions(
         reconstruction, submission_file, indices_to_predict=None):
     if indices_to_predict is None:
