@@ -21,8 +21,10 @@ To reproduce the final kaggle submissions, follow the steps listed below. Note t
 ensembling requires two separate runs of training, one on 80% of the data and one on
 90% of the data.
 
-1. Run training_validation_split.py where TRAIN_PROPORTION is set to 0.8 and 0.9 and THREE_WAY_SPLIT is set to True and False, respectively. Make sure to place the files in appropriate directories so no files are overwritten. You can also choose to use the files in the repository. The training and validation indices corresponding to a 90% - 10% split are in data/ and the training and validation indices corresponding used for stacking are in data/train_valid_80_10_10/. 
+1. Run training_validation_split.py where TRAIN_PROPORTION is set to 0.8 and 0.9 and THREE_WAY_SPLIT is set to True and False, respectively. Make sure to place the files in appropriate directories so no files are overwritten. You can also choose to use the files in the repository. The training and validation indices corresponding to a 90% - 10% split are in data/ and the training and validation indices corresponding used for stacking are in data/train_valid_80_10_10/. Make sure to correctly set the paths in utils.py depending on where you save the training data.
 2. Run the predictors listed in Table II in the paper accompanying this repository. Specify parameters via the command line, and where no value is mentioned, use the default value specified in the code. Make sure to run them on both the 80% and 90% training sets. You should have a meta_training*, meta_validation* and submission* csv file for each method. 
-3. Once all the models have been run stacking.py setting STACKING_METHOD to 'nn'. This produces the final submission file. 
+3. Once all the models have been run put all the meta*.csv files in the locations specified by ENSEMBLE_INPUT_DIR in utils.py. Then run stacking.py, setting STACKING_METHOD to 'nn'. This produces the final submission file. Again, make sure all files are placed in the correct locations. 
+
+Reach out to {hahnb, kklein, kuhnl}@student.ethz.ch if you run into any problems. 
 
 
