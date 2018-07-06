@@ -9,7 +9,7 @@ import utils
 SUBMISSION_FILE = os.path.join(
     utils.ROOT_DIR, 'data/ensemble' +
     datetime.now().strftime('%Y-%b-%d-%H-%M-%S') + '.csv')
-STACKING_METHOD = 'rr'
+STACKING_METHOD = 'nn'
 USE_THREE_WAY = True
 
 def stacking(meta_training, meta_validation):
@@ -47,12 +47,16 @@ def stacking(meta_training, meta_validation):
             train_ratings_predictions, train_ratings_target)
         # TODO(b-hahn): Rename variables. Use reference to 'meta'.
         lvl2_validation = np.dot(weights, validation_ratings_predictions.T)
+        lvl2_test = np.dot(weights, test_ratings_predictions.T)
+    elif STACKING_METHOD == "xgb":
+        regressor = xgb.XGBRegressor(
+            max_depth=4, learning_rate=0.02, n_estimators=300, eta=0.99)
+        regressor.fit(train_ratings_predictions, train_ratings_target)
+        lvl2_validation = regressor.predict(validation_ratings_predictions)
+        lvl2_test = regressor.predict(test_ratings_predictions)
     else:
         if STACKING_METHOD == 'nn':
-            regressor = MLPRegressor(hidden_layer_sizes=(200, ))
-        elif STACKING_METHOD == "xgb":
-            regressor = xgb.XGBRegressor(
-                max_depth=4, learning_rate=0.02, n_estimators=500, eta=0.99)
+            regressor = MLPRegressor(hidden_layer_sizes=(100, ))
         elif STACKING_METHOD == "rr":
             regressor = Ridge(solver='auto', normalize='False')
 
