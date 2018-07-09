@@ -8,9 +8,6 @@ for n_features in range(10, 200, 10):
         (int(n_features / 2), int(n_features / 4)),
         (int(n_features / 2), int(n_features / 4), int(n_features / 8))]
     for embedding_type in EMBEDDING_TYPES:
-        # TODO(heylook): Unused variable. Piece of legacy code or missing
-        # functionality?
-        hidden_layer_width = int(n_features / 2)
         for architecture in architectures:
             args = [
                 "bsub", "-R", "rusage[mem=6000]", "python", "model_nn.py",
