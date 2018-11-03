@@ -1,0 +1,312 @@
+\documentclass[10pt,conference,compsocconf]{IEEEtran}
+
+%\usepackage{times}
+%\usepackage{balance}
+\usepackage{url}
+\usepackage{graphicx}	% For figure environment
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+
+
+% Conventions
+% - use present tense
+% - user $i$, movie $j$
+% - predictions: $\widehat{R}$, $\widehat{r_{i,j}}$
+% TODO(?): subtitle capitalization
+
+
+\begin{document}
+\title{Collaborative Filtering: Stacking Matrix Factorization and Neural Networks for Improved Recommendations}
+
+\author{
+  Benjamin Hahn, Kevin Klein, Lorenz Kuhn\\
+  Department of Computer Science, ETH Zurich, Switzerland
+}
+
+\maketitle
+
+\begin{abstract}
+Online businesses face the challenge of recommending relevant products to users based on users' previous preferences and similar customers. This work explores the use of classic matrix factorization methods on the one hand and recent neural network-based methods on the other hand. Final predictions were further improved using ensembling methods such as bagging and stacking.
+We report similar, competitive scores for matrix factorization methods and slightly lower accuracy for neural network-based methods with a final ensemble RMSE of 0.964.
+\end{abstract}
+
+\section{Introduction}
+
+Many online businesses face the difficult yet crucial challenge of finding the most relevant products out of an enormous set of options for each of their users. Providing better recommendations, such as suggesting a movie on Netflix or a product on Amazon that a user might like, has been found to be linked to increased sales, an increase in consumers and competitive advantages \cite{hinz2010impact}.
+Given the gigantic set of options, more than 570 million products are currently available on Amazon.com \cite{scrap2018}, a wide variance in preferences between different users and relatively little knowledge about individual users, this is a challenging task. Collaborative filtering \cite{sarwar2001item} is an approach to this problem in which users' preferences are modeled based on their past interactions with the system. These methods are based on the fundamental assumption that similarities between the users in terms of their past preferences can be exploited to make new recommendations. Whereas many applications in industry are based on implicit feedback, such as the number of times a user has clicked on or viewed a certain product, we work with explicit feedback, that is ratings of movies on an integer scale. Notably, we exclusively work with meta data, that is, we do not have access to any information about the users and movies besides their ratings.
+
+Traditionally, k-nearest neighbor approaches have been applied to this problem. In these algorithms, the ratings of the most similar users or items are exploited to infer the rating for a given user and item \cite{sarwar2001item}.
+
+Recently, the most popular approach has been to represent users and items  as vectors in a shared, low-dimensional latent space. The driving intention is to capture few hidden factors, assumed to have the greatest influence on the users' preferences. These embeddings may be obtained and then combined in a linear fashion using matrix factorization techniques \cite{koren2009matrix}, or in a non-linear way using neural networks \cite{he2017neural}.
+
+We draw on and improve previous work by proposing an approach which applies a state-of-the-art ensembling method to recommendations produced by both sophisticated matrix factorization techniques as well as neural network models.
+
+Our main contributions are thus the following:
+\begin{enumerate}
+    \item We adapt and improve established matrix factorization techniques for our purposes.
+    \item Following the idea of pre-training neural networks, we use existing embeddings as input for our neural network. We obtain embeddings using a number of different methods which are then used as input for a feed-forward neural network to model nonlinear interactions between the users and the items.
+    \item The predictions are then combined via an ensembling method called stacking which learns the optimal blend as defined by the reduction of the RMSE on a holdout set. The methods tested include standard linear regression, extreme gradient boosting and feed-forward neural networks, among others.
+\end{enumerate}
+
+
+\section{Data and metric}
+We use a dataset \footnote{https://www.kaggle.com/c/cil-collab-filtering-2018} of movie ratings by anonymous users which contains the set of observed ratings $\mathcal{R}$. For $(i, j, r_{ij}) \in \mathcal{R}$, $i \in [1\dots10000]$ is a user id, $j \in [1\dots1000]$  is an item id and $r_{ij} \in [1\dots5]$ the rating of the user for this item. $\mathcal{R}$ contains 11.8\% of all ratings, i.e. the rest is unknown. Note that we have no knowledge about either movies or users other than their ids.
+
+The mean number of movies users have rated is \(1167\pm 952\), and no user has rated fewer than 8 movies. The distribution of both the mean number of movies seen as well as the mean rating of movies is roughly Gaussian. % TODO: back up that claim by some number?
+This led us to use all the data at our disposal since we deemed the effect of individual outliers (e.g. users with only 8 ratings) to be negligible on the overall results.
+
+
+To evaluate our predictions, we are given a test set $\mathcal{T}$, where $(i,j) \in \mathcal{T}$ are unobserved tuples of user and item ids for which we want to infer ratings.
+
+The goal of this task is to minimize the Root Mean Squared Error (RMSE) given by:
+\begin{equation}
+RMSE = \sqrt{\frac{1}{|\mathcal{T}|}\sum_{(i, j) \in \mathcal{T}} (r_{i,j} -\widehat{r}_{i,j})^2}
+\end{equation}
+
+where $\mathcal{T}$ is a test set of ratings in which $r_{u, i}$ is the actual rating of user $u$ for movie $i$ and $\widehat{r}_{i,j}$ the corresponding prediction.
+%TODO(?): Decide whether we actually want to give intuition for RMSE. In an acutal paper we would out ourselves as N00Bs by doing so ;)
+Intuitively, this is a measure of how much our predictions deviate from the true ratings on average, while penalising large errors more strongly than small errors.
+
+For the purpose of testing the performance of our models, we randomly split the data into several parts, with the largest part used as training data for the predictors and the smaller parts as validation sets for our models. For individual models we need only one validation set, yet when we wish to use ensembling methods we require a distinct second validation set (see section \ref{sec:ensembling}).
+
+Each validation set consists of 10\% of the labeled data, with the training data equal to remaining amount.
+
+\section{Models and Methods}
+\label{sec:methods}
+\subsection{Individual models}
+Our models revolve around lower-dimensional representations of the initially sparse and high-dimensional data. Given a lower-dimensional representation $u_i$ of a user $i$ and $z_j$ movie $j$, also called embeddings, we can combine those to predict $r_{i,j}$. There are different approaches towards combining the latter. The simplest is a linear combination of both embeddings, the dot-product. More complex, non-linear combinations can be modeled by the activation functions used in neural networks (NNs). Our methods provide ways of generating such embeddings from the initially given ratings.
+
+For those methods we assume that both embeddings stem from a shared embedding-space.
+
+Observe that approximating $\widehat{r_{i,j}}$ by $u_i^Tz_j$ can be expressed in matrix form: $\widehat{R} = UZ^T$ where row $i$ of $U$ represents the embedding of user $i$ and the row $j$ of $Z$ represents the embedding of movie $j$. Hence the typical reference to the term \emph{matrix factorization}.\\
+
+All models were evaluated via grid search of their hyperparameters, most notably the embedding-dimension, on the validation set.
+
+\subsubsection{Singular Value Decomposition (SVD)}
+
+%TODO(kkleindev): Define the meaning of the original ratings matrix and make the transition to embeddings cleaner/more explicit.
+We know that SVD can provide a matrix factorization for general matrices $M = U \Sigma V^*$. As $\Sigma$ is diagonal with non-negative entries, we can mutliply both $U$ and $V$ with the square root of $\Sigma$ to obtain implicit embeddings of users and movies. In order to obtain a \emph{lower-dimensional} embedding, we simply drop all but the first $k$ dimensions, which minimizes the approximation error with regards to the Frobenius norm\footnote{Eckart–Young–Mirsky Theorem}. With those lower-dimensional embeddings we can generate sensible predictions $\hat{R}$. The careful reader might have noticed that the origin of our problem is that we do not dispose of such a matrix $M$. The ratings given to us only constitute a \emph{sparse} matrix, constituted of many holes, as most users have rated but a small proportion of all movies. Hence we allow the brute compromise of filling up the holes of ratings matrix by heuristics, which we refer to as \emph{imputation}.
+We have looked into different approaches towards imputation, ranging from simple row averages to more elaborate imputations based on the means and variances of the considered movie-user-pair. Imputation by row average perfomed best for SVD methods. Details can be found in our codebase. \footnote{https://github.com/kkleindev/CILRecommender2018}.
+
+\subsubsection{Iterated SVD}
+A simple yet powerful tweak on the previous approach is to reduce the importance of imputation by repeating the matrix factorization procedure. In particular, predictions from one round serve as imputation for the following round. We presume that this is an enhancement over single-round SVD as it decreases the importance of initialization.
+
+\begin{algorithmic}
+	\STATE $R$: Ratings matrix with holes, $k$ fixed rank
+	\STATE $M \leftarrow R$
+	\STATE Impute $M$ by initialization
+    \FOR {$i \in \{1 \dots n_{epochs}\}$}
+    	\STATE ($U, \Sigma, D) \leftarrow SVD(M)$
+    	\STATE $U_{(k)} \leftarrow U[:, 1:k]$
+    	\STATE $\Sigma_{(k)} \leftarrow \Sigma[1:k, 1:k]$
+    	\STATE $D_{(k)} \leftarrow D[:, 1:k]$
+    	\STATE $M \leftarrow R$
+    	\STATE Impute $M$ by $U_{(k)} \Sigma_{(k)} D_{(k)}^T$
+    \ENDFOR
+    \RETURN $M$
+\end{algorithmic}
+
+\subsubsection{Regularized 'SVD'}
+Both proposed methods suffer two obvious weaknesses:
+\begin{itemize}
+\item{Due to the nature of SVD, some features will dominate others to an extent that might introduce numerical instabilities.}
+\item{Imputation dilutes our knowledge and gives equal importance to imputed values and to actual ratings.}
+\end{itemize}
+
+By defining and optimizing for an explicit loss function we can tackle those problems:
+\begin{itemize}
+\item{Regularization by the 2-norm reduces the difference of magnitude between features.}
+\item{We can explicitly only consider given ratings when calculating the approximation error with our loss function.}
+\end{itemize}
+
+\begin{equation}
+\begin{split}
+\mathcal{L} = \sum_{(i,j) \in T} ||r_{i,j} - \widehat{r}_{i,j}||^2 + \lambda_1 (||U||_F^2 + ||Z||_F^2) \\
++ \lambda_2(||b_u||^2 + ||b_z||^2)
+\end{split}
+\end{equation}
+
+With $\widehat{r}_{i,j} = u_i z_j + b_{ui} + b_{zj}$, $b_{ui}$ representing a bias for user $i$, $b_{zj}$ representing a bias for movie $j$ and $\lambda_1, \lambda_2$ serving as regularization factors. We found that regularizing the biases with a Lagrangian $b_{zj} + b_{ui} = \mu$ worked better in practice, where $\mu$ is the total average of ratings.
+
+We tested two approaches towards minimization of this loss function:
+\begin{itemize}
+\item Stochastic Gradient Descent ('Reg SGD'):
+All features are trained and updated simultaneously. Given a rating $r_{i,j}$, all of the features from $u_i$ as well as $z_j$, $b_ui$ and $b_zj$ will be updated based on their relative partial derivative of the loss function.
+\item Coordinate descent ('SF'):
+One embedding dimension is learnt only after convergence of the previous dimension. This method has been popularized by Simon Funk \footnote{http://sifter.org/simon/journal/20061211.html}.
+\end{itemize}
+We found that for both approaches it worked better to initialize the embeddings via SVD instead of using random matrices. In particular, we used SVD with imputation by variance-adjusted means\footnote{https://github.com/kkleindev/CILRecommender2018}. Reg SGD gave the best results for an embedding-dimensionality of 17 and both regularization terms equaling 0.05.
+
+\subsubsection{Iterated SF}
+In order to further reduce the impact of the imputation used before the SVD initialization, we 'chained' several runs of SF. Hence embedding and bias vectors from previous runs were used as initialization for following runs. In addition, we found that smoothing via KNN accord to Bell et al. \cite{bell2007improved} slightly enhanced predictions. A grid-search over all hyperparameters yielded that 6 iterations of SF, 100 iterations over the dataset per SF application, an embedding-dimension of 20, $\lambda_1 = 0.02$ and $\lambda_2 = 0.05$ resulted in the best validation score.
+
+\subsubsection{Neural Networks}
+We leverage neural network models in two different ways. Firstly, we let the neural network learn lower-dimensional representations of users and items. Secondly, we apply neural networks to existing embedding vectors. Both approaches can be used to craft non-linear combinations for the sake of prediction.
+
+The algorithm proposed in Neural Collaborative Filtering \cite{he2017neural} uses the former approach. One-hot encodings for users and items serve as input to a feed-forward network. Hence, the vector defined by the activation of the first hidden layer can then be seen as the embedding learned by the neural network.
+
+The second strategy exploits precomputed embeddings while also being able to model complex, nonlinear interactions  between the users and the items.
+To this end, we train neural network models to predict ratings given user and item embeddings which are obtained through a number of different dimensionality reduction techniques: Locally Linear Embeddings \cite{roweis2000nonlinear}, Non-Negative Matrix Factorization \cite{cichocki2009fast}, Principal Component Analysis, SVD and iterated SVD, regularized SVD and the coordinate descent method as described above.
+
+In particular the neural network model used is the following:
+\begin{equation}
+\begin{aligned}
+    \bf{z_1} &= \phi_1(\bf{e_i}, \bf{e_u}) = [\bf{e_i}, \bf{e_u}]\\
+    \bf{z_2} &= a_2(\bf{W_2}^T \bf{z_1} + b_2) \\
+    &\dots \\
+    \bf{z_L} &= a_{L - 1 }(\bf{W_{L}}^T \bf{z_{L - 1}} + b_L) \\
+    \hat y_{ui} &= \sigma(\bf{h}^T \bf{z_L})
+\end{aligned}
+\end{equation}
+
+where $a_i,\bf{W_i}, \bf{b_i}$, denote the i-th layer's activation function, weights and bias respectively. With $\bf{e_i}$ and $\bf{e_u}$ we denote the embedding vectors for the users and items respectively. We use the rectifier (ReLU) activation function, which has been found to frequently yield superior results as compared to the traditionally used sigmoid and tanh functions \cite{glorot2011deep}. %TODO: remove last sentence?
+Model parameters are then trained using the Adam optimizer \cite{kingma2014adam} to minimize the squared loss.
+
+Using grid search,  we find the hyperparameters yielding the best results on the validation set (see table \ref{table:model_results}).
+
+% TODO(?): Into how much detail do we need to go here? If you want to provide more detail on the architecture, refer to analysis/nn_scores_24.csv where these numbers come from.
+
+\subsection{Ensembling methods}
+\label{sec:ensembling}
+Ensembling techniques are based on the idea of combining multiple predictions to reduce their bias and the variance and, in turn, the overall prediction error.
+
+This follows the intuition that different prediction methods may do better in different circumstances which is something we would like to exploit. Ever since the seminal Netflix prize they have played a prominent role where most of the best-placed teams achieved their final results by combining as many as 500 models \cite{Koren2009,toscher2009bigchaos}. %TODO(ben): check for exact number
+
+The most straightforward way to combine results is to take the uniform average over all results. This often yields an improvement but does not take into account strengths and weaknesses of individual models, which are all assigned equal weight.
+
+To improve on this, we can split the data into three parts, creating two validation sets: the actual validation set for each predictor as well as a 'meta-validation' set for the stacking ensemble.
+Using the predictions of each predictor for the first validation set, we can fit a model to the ground truth ratings of the first validation set in a second stage. The resulting model can then be validated using the hold-out set. The final predictions are generated by training on all data and combining the predictions using the learned model.
+
+This process is referred to as \textit{stacking} or \textit{blending}.
+
+Any model can be used for this second stage in stacking that is capable of regression. For this project linear regression, ridge regression, extreme gradient boosted decision trees (xgboost) and neural networks were used to generate linear as well as nonlinear combinations of the predictions.
+
+In the context of CF as opposed to classic regression we face the problem that predictions must be made for users with varying numbers of missing entries. As a result, the most straightforward implementation merely assigns the prediction matrix of each model a scalar weight.
+
+\begin{table*}[ht!]
+	\label{table:model_results}
+    \centering
+    \footnotesize
+    \caption{Validation scores of individual models}
+    \begin{tabular}[t]{|l|l|}
+    \hline
+    Linear Model & RMSE \\ \hline \hline
+    SVD				&1.008\\ \hline
+    Iterated SVD	&0.992 \\ \hline
+    Reg SGD			&0.978\\ \hline
+    SF				&0.984 \\ \hline
+    Iterated SF		&0.980\\ \hline
+    \end{tabular}
+    %\hfill
+    \qquad
+    \begin{tabular}[t]{|l|l|}
+    \hline
+    NN initialization  & RMSE  \\ \hline \hline
+    None     		& 1.116 \\ \hline
+    SVD             & 0.993 \\ \hline
+    Iterated SVD    & 0.999 \\ \hline
+    Reg SGD 		& 1.043 \\ \hline
+    SF              & 1.011 \\ \hline
+    LLE             & 1.070  \\ \hline
+    NMF             & 0.994 \\ \hline
+    PCA             & 0.993 \\ \hline
+    \end{tabular}
+    %\hfill
+    \qquad
+    \begin{tabular}[t]{|l|l|}
+    \hline
+    Ensembling & RMSE  \\ \hline
+    uniform average     & 0.980 \\ \hline
+    linear regression             & 0.975 \\ \hline
+    ridge regression    & 0.976 \\ \hline
+    neural network             & 0.964 \\ \hline
+    xgboost             & 0.972 \\ \hline
+    \end{tabular}
+    \\
+\end{table*}
+
+Grid search was performed to find the best set of parameters for stacking using neural networks and xgboost. Moreover, different combinations of predictions were tested as an input to stacking as previous work has shown that models performing poorly on their own may still yield an improvement when included in an ensemble \cite{Jahrer2010}.
+
+% TODO(ben): add some more theory from the recommender systems books?
+
+The previously described methods all use the output from various predictors to generate a combined prediction. Bootstrapped aggregation, or bagging, on the other hand, is a variance-reducing technique that runs a single method on a sample of the same data several times.
+
+Several variants exist, with the one used in this work being row-wise bootstrapping \cite[Chapter~6.3.2]{Aggarwal2016}. Here, the order of the rows (or columns) of the data is randomly selected with replacement to form a sampled matrix of the same size as the original ratings matrix. A chosen collaborative filtering algorithm is run on each sampled matrix and a uniform average over all results is taken to reduce the results to a single matrix.
+
+
+%\subsection{Preprocessing}
+
+% Many matrix factorization techniques, such as SVD, require full matrices, that is ratings for all user and movie pairs, as initial input. As we only observe a small subset of ratings, we face the problem of inferring the unobserved ratings to generate a valid input for our main methods. To this end, we use a number of different approaches.
+
+% \subsubsection{Naive Averages}
+% One straightforward way of inferring an unobserved rating $r_{ij}$ is to set unobserved ratings to the mean of the observations in row $i$ or column $j$ respectively. This captures the intuition that a user's rating for a film is going to be close to the user's other ratings or the films other ratings respectively.
+
+% \subsubsection{Biases}
+% A more sophisticated idea is to compute how much the average rating for a given user or a given film deviates from the total average of all observed ratings: $user\_bias_i = \frac{1}{N_i} \sum_{j : r_{ij} \in R} r_{ij} - \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j}$ , where $N_i$ is the number of observations for user $i$, $N$ the total number of observations and $R$ the set of observed ratings. Analogously, $movie\_bias_j$ can be computed for all movies.
+
+% Given these biases, we then compute the initialization for an unobserved rating $r_{ij}$ as $r_{ij} = \frac{1}{N} \sum_{r_{ij} \in R} r_{i,j} + user\_bias_i + movie\_bias_j$.
+
+% \subsubsection{"Novel init"}
+% % TODO(?): Decide whether and in what form we want to include this based on results we get.
+
+
+\section{Results}
+\label{sec:results}
+
+Table \ref{table:model_results} shows an overview of the best performances for different predictors individually as well as different ensembling methods.
+
+\begin{table}[H]
+\label{tab:final_ensemble_models}
+\centering
+\caption{Models used in final ensemble}
+\begin{tabular}[t]{|l|l|}
+\hline
+Model & Individual RMSE \\ \hline \hline
+Iterated SF with rank 8 & 0.981\\ \hline
+Iterated SF with rank 10 & 0.983\\ \hline
+Iterated SF with rank 13 & 0.982\\ \hline
+Iterated SF with rank 15 & 0.989\\ \hline
+Iterated SF with rank 17 & 0.988\\ \hline
+Neural net with PCA embeddings & 0.992 \\ \hline
+Reg SGD			&0.978\\ \hline
+Reg SGD			&0.981\\ \hline
+Bagging SVD for 30 epochs &0.979 \\ \hline
+\end{tabular}
+\end{table}
+
+
+In general, all matrix factorization methods achieved a similar performance and outperformed neural network-based methods. Regularized SGD achieved the best performance among the base predictors, with an improvement of \(3\%\) compared to vanilla SVD.
+
+All ensembling techniques led to similarly good results, lowering the final error to beneath the best values of individual predictors. Neural network ensembles led to the best score on Kaggle, albeit by a small margin. Note that the ensemble predictions were generated by training the base predictors on 100\% of the available data to improve the RMSE beyond what was achieved when using 90\% of the data as training data.
+Nonlinear methods in general have the potential to outperform linear models but this is highly dependent on the variety of input used - if the similarity is great, non-linearity will provide less of a benefit.
+
+The best final score was achieved using an ensemble of 10 methods, listed in table \ref{tab:final_ensemble_models}. %TODO: seems like table number is wrong
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+In \cite{he2017neural}, letting the network learn its own embeddings as well as combining the predictions of this network with matrix factorization predictions yielded an improvement over standard matrix factorization techniques. We do not find the same results which might be attributed to the task in the paper being binary classification rather than multi-class classification.
+
+% TODO(?): Compare the NN results to the relevant benchmark.
+
+Ensembling methods consistently improved scores beyond the base predictors although less difference was observed between different stacking methods than expected. When compared to \cite{toscher2009bigchaos} we used a smaller set of predictions which may explain why linear models perform similarly well as non-linear methods in our case. %TODO: change citation to citet()
+
+Furthermore, the winners of the Netflix prize used several layers of stacking, i.e. using blends of blends which we did not explore in this work and could potentially bring about further improvement and explain our comparatively smaller performance gains due to ensembling.
+
+One limitation of our stacking method is that it assigns each predicted ratings matrix a weight, thus disregarding user or item specific characteristics. We could extend the method to assign weights to individual users or items instead, although it would become more difficult to reliably make predictions for users or items with few ground truth ratings.
+
+\section{Conclusion}
+We were able to adapt existing models, most notably Simon Funk's matrix factorization technique and thereby improve the prediction RMSEs.%TODO: compared to what?
+
+In particular the repetition of the coordinate descent algorithm as well as a non-random initialization of embeddings and postprocessing by smoothing helped improve the scores. Combining the latter with neural network models, although not performing astonishingly by themselves, allowed for an enhancement of 1.4 \% % (0.978 - 0.964) / 0.978
+percent. We found that a stacked ensemble using a neural network led to the best final results.
+
+Further work could include investigating other neural network based collaborative filtering approaches, more sophisticated ensembling as well as using a greater variety of predictors. %TODO: anything else?
+
+\clearpage
+\bibliographystyle{IEEEtran}
+\bibliography{report}
+\end{document}
